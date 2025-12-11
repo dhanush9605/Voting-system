@@ -1,0 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core palette - Light mint/sage theme */
+    --background: 150 30% 95%;
+    --foreground: 220 20% 15%;
+
+    /* Card surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 15%;
+
+    /* Primary - Teal/Cyan accent */
+    --primary: 170 60% 35%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Light sage */
+    --secondary: 150 25% 90%;
+    --secondary-foreground: 220 20% 15%;
+
+    /* Muted surfaces */
+    --muted: 150 20% 92%;
+    --muted-foreground: 220 10% 45%;
+
+    /* Accent cards - Colorful gradients */
+    --accent: 170 55% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Accent variations for stat cards */
+    --accent-coral: 12 85% 65%;
+    --accent-coral-light: 12 90% 92%;
+    --accent-teal: 170 55% 50%;
+    --accent-teal-light: 170 60% 92%;
+    --accent-pink: 330 70% 65%;
+    --accent-pink-light: 330 75% 92%;
+    --accent-purple: 260 60% 65%;
+    --accent-purple-light: 260 65% 94%;
+    --accent-green: 150 50% 45%;
+    --accent-green-light: 150 55% 92%;
+
+    /* Status colors */
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 150 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 90% 55%;
+    --warning-foreground: 220 20% 15%;
+
+    /* Borders and inputs */
+    --border: 150 20% 88%;
+    --input: 150 20% 88%;
+    --ring: 170 60% 35%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 15% 40%;
+    --sidebar-primary: 170 60% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 150 30% 95%;
+    --sidebar-accent-foreground: 220 20% 15%;
+    --sidebar-border: 150 20% 90%;
+    --sidebar-ring: 170 60% 35%;
+
+    /* Shadows */
+    --shadow-soft: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
+    --shadow-card: 0 4px 16px -4px rgba(0, 0, 0, 0.1);
+    --shadow-elevated: 0 8px 24px -8px rgba(0, 0, 0, 0.12);
+
+    /* Chart colors */
+    --chart-1: 170 55% 50%;
+    --chart-2: 12 85% 65%;
+    --chart-3: 260 60% 65%;
+    --chart-4: 330 70% 65%;
+    --chart-5: 40 90% 55%;
+  }
+
+  .dark {
+    --background: 220 25% 10%;
+    --foreground: 150 20% 95%;
+
+    --card: 220 25% 14%;
+    --card-foreground: 150 20% 95%;
+
+    --popover: 220 25% 14%;
+    --popover-foreground: 150 20% 95%;
+
+    --primary: 170 55% 50%;
+    --primary-foreground: 220 25% 10%;
+
+    --secondary: 220 20% 20%;
+    --secondary-foreground: 150 20% 95%;
+
+    --muted: 220 20% 18%;
+    --muted-foreground: 150 15% 60%;
+
+    --accent: 170 55% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 170 55% 50%;
+
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 150 15% 70%;
+    --sidebar-primary: 170 55% 50%;
+    --sidebar-primary-foreground: 220 25% 10%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 150 20% 95%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 170 55% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Stat card variants */
+  .stat-card {
+    @apply rounded-xl p-5 relative overflow-hidden transition-all duration-300;
+  }
+
+  .stat-card-coral {
+    @apply bg-accent-coral-light;
+  }
+
+  .stat-card-teal {
+    @apply bg-accent-teal-light;
+  }
+
+  .stat-card-pink {
+    @apply bg-accent-pink-light;
+  }
+
+  .stat-card-purple {
+    @apply bg-accent-purple-light;
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-card/80 backdrop-blur-lg border border-border/50;
+  }
+
+  /* Gradient backgrounds */
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(170 70% 45%) 100%);
+  }
+
+  .gradient-coral {
+    background: linear-gradient(135deg, hsl(var(--accent-coral)) 0%, hsl(20 85% 70%) 100%);
+  }
+
+  .gradient-teal {
+    background: linear-gradient(135deg, hsl(var(--accent-teal)) 0%, hsl(180 60% 55%) 100%);
+  }
+
+  .gradient-pink {
+    background: linear-gradient(135deg, hsl(var(--accent-pink)) 0%, hsl(340 75% 70%) 100%);
+  }
+
+  .gradient-purple {
+    background: linear-gradient(135deg, hsl(var(--accent-purple)) 0%, hsl(280 65% 70%) 100%);
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
