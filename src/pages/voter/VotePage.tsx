@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { User, Check, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,41 +12,38 @@ import { useToast } from "@/hooks/use-toast";
 import { Candidate } from "@/types";
 
 // Mock candidates
-const candidates: Candidate[] = [
-  {
-    id: "1",
-    name: "Alex Thompson",
-    party: "Student Progress Alliance",
-    manifesto: "Committed to improving campus facilities, extending library hours, and creating more student job opportunities. I believe in transparent governance and open communication with all students.",
-    avatarUrl: undefined,
-  },
-  {
-    id: "2",
-    name: "Maya Rodriguez",
-    party: "Green Campus Initiative",
-    manifesto: "Focused on environmental sustainability, reducing campus carbon footprint, and promoting eco-friendly practices. Together we can build a greener future for our college.",
-    avatarUrl: undefined,
-  },
-  {
-    id: "3",
-    name: "Jordan Lee",
-    party: "Innovation Forward",
-    manifesto: "Advocate for digital transformation, improved online resources, and modern learning tools. Let's bring our campus into the future with technology that works for everyone.",
-    avatarUrl: undefined,
-  },
-];
+
 
 const VotePage = () => {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
-  
+
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isAbstaining, setIsAbstaining] = useState(false);
   const [abstainReason, setAbstainReason] = useState("");
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voteReceipt, setVoteReceipt] = useState<{ voteId: string; timestamp: string } | null>(null);
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  const fetchCandidates = async () => {
+    try {
+      const { data } = await api.get('/candidates');
+      setCandidates(data);
+    } catch (error) {
+      console.error("Failed to fetch candidates", error);
+      toast({
+        title: "Error loading candidates",
+        description: "Please refresh the page.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Check if user has already voted
   if (user?.hasVoted) {
@@ -99,8 +97,18 @@ const VotePage = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (isAbstaining) {
+        // Backend might support "abstain" as a special candidate or flag
+        // For now, let's treat it as skipping the logic or sending specific ID if required
+        // BUT, current backend doesn't support abstain logic in `castVote` (it requires candidateId).
+        // I will assume for MVP we only support voting for candidates.
+        toast({ title: "Abstention not supported fully yet", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Real API Call
+      await api.post('/vote', { candidateId: selectedCandidate?._id || selectedCandidate?.id });
 
       const receipt = {
         voteId: `VOTE-${Date.now()}`,
@@ -109,15 +117,15 @@ const VotePage = () => {
 
       setVoteReceipt(receipt);
       updateUser({ hasVoted: true });
-      
+
       toast({
         title: "Vote submitted successfully!",
-        description: isAbstaining ? "Your abstention has been recorded." : `You voted for ${selectedCandidate?.name}`,
+        description: `You voted for ${selectedCandidate?.name}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Failed to submit vote",
-        description: "Please try again.",
+        description: error.response?.data?.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -135,11 +143,11 @@ const VotePage = () => {
         </div>
         <h1 className="text-2xl font-bold text-foreground mb-4">Vote Confirmed!</h1>
         <p className="text-muted-foreground mb-6">
-          {isAbstaining 
+          {isAbstaining
             ? "Your abstention has been recorded successfully."
             : `You voted for ${selectedCandidate?.name}. Thank you for participating!`}
         </p>
-        
+
         <Card className="text-left mb-6">
           <CardHeader>
             <CardTitle className="text-lg">Vote Receipt</CardTitle>
@@ -182,16 +190,16 @@ const VotePage = () => {
       {/* Candidates Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {candidates.map((candidate) => (
-          <Card 
-            key={candidate.id} 
+          <Card
+            key={candidate.id}
             className="cursor-pointer hover:shadow-elevated transition-all hover:border-primary/30"
             onClick={() => handleSelectCandidate(candidate)}
           >
             <CardContent className="pt-6">
               <div className="flex flex-col items-center text-center">
-                <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-4">
-                  {candidate.avatarUrl ? (
-                    <img src={candidate.avatarUrl} alt={candidate.name} className="w-full h-full rounded-full object-cover" />
+                <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-4 overflow-hidden">
+                  {candidate.imageUrl ? (
+                    <img src={candidate.imageUrl} alt={candidate.name} className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-10 h-10 text-muted-foreground" />
                   )}
@@ -214,7 +222,7 @@ const VotePage = () => {
         ))}
 
         {/* Abstain Card */}
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-elevated transition-all border-2 border-dashed hover:border-muted-foreground/50"
           onClick={handleAbstain}
         >
@@ -243,12 +251,12 @@ const VotePage = () => {
               {isAbstaining ? 'Confirm Abstention' : `Vote for ${selectedCandidate?.name}?`}
             </DialogTitle>
             <DialogDescription>
-              {isAbstaining 
+              {isAbstaining
                 ? 'You are choosing to abstain from voting for any candidate.'
                 : `You are about to cast your vote for ${selectedCandidate?.name} (${selectedCandidate?.party}).`}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
             {isAbstaining ? (
               <div className="space-y-4">

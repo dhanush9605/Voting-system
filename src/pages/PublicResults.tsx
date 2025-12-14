@@ -85,10 +85,10 @@ const PublicResults = () => {
               Student Council Election 2024
             </h1>
             <p className="text-muted-foreground">
-              Results published on {new Date(publishedAt).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
+              Results published on {new Date(publishedAt).toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit'
@@ -159,11 +159,11 @@ const PublicResults = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={resultsData} layout="vertical">
                       <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                      <YAxis 
-                        type="category" 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
                         tick={{ fill: 'hsl(var(--foreground))', fontSize: 12 }}
                         width={120}
                       />
@@ -253,9 +253,8 @@ const PublicResults = () => {
                     {resultsData.map((result, index) => (
                       <tr key={index} className="border-b border-border last:border-0">
                         <td className="py-4 px-4">
-                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                            index === 0 ? 'bg-accent-coral text-primary-foreground' : 'bg-muted text-muted-foreground'
-                          }`}>
+                          <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${index === 0 ? 'bg-accent-coral text-primary-foreground' : 'bg-muted text-muted-foreground'
+                            }`}>
                             {index + 1}
                           </span>
                         </td>
@@ -265,11 +264,11 @@ const PublicResults = () => {
                         <td className="py-4 px-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                              <div 
+                              <div
                                 className="h-full rounded-full"
-                                style={{ 
+                                style={{
                                   width: `${(result.votes / totalVotes) * 100}%`,
-                                  backgroundColor: result.color 
+                                  backgroundColor: result.color
                                 }}
                               />
                             </div>

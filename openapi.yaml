@@ -1,0 +1,188 @@
+openapi: 3.0.0
+info:
+  title: CampusVote API
+  description: API for the CampusVote voting system.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [voter, admin, candidate]
+        verificationStatus:
+          type: string
+          enum: [pending, verified, rejected]
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - studentId
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        studentId:
+          type: string
+        imageHash:
+          type: string
+        imageUrl:
+          type: string
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Invalid input or user exists
+  /auth/login:
+    post:
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /auth/logout:
+    post:
+      summary: Logout user
+      responses:
+        '200':
+          description: Logged out successfully
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      responses:
+        '200':
+          description: Token refreshed
+  /auth/profile:
+    get:
+      summary: Get current user profile
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /uploads/signed-url:
+    post:
+      summary: Get signed URL for upload
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fileType:
+                  type: string
+      responses:
+        '200':
+          description: Signed URL generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploadUrl:
+                    type: string
+                  publicUrl:
+                    type: string
+  /face/compare:
+    post:
+      summary: Compare face image
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imageUrl:
+                  type: string
+                imageHash:
+                  type: string
+      responses:
+        '200':
+          description: Comparison result
+  /face/register-embedding:
+    post:
+      summary: Register face embedding
+      security:
+        - cookieAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imageUrl:
+                  type: string
+      responses:
+        '200':
+          description: Embedding registered
+  /admin/pending-registrations:
+    get:
+      summary: Get pending registrations
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of pending users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'

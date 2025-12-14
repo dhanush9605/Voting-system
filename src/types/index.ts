@@ -26,7 +26,7 @@ export interface Candidate {
   id: string;
   name: string;
   party?: string;
-  avatarUrl?: string;
+  imageUrl?: string;
   manifesto?: string;
   voteCount?: number;
 }

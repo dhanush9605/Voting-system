@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import api from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { User, GraduationCap, Mail, Phone, Camera, Upload, Check, RefreshCw, Shield, Lock, Eye, EyeOff } from "lucide-react";
 import Webcam from "react-webcam";
 import { Button } from "@/components/ui/button";
@@ -16,14 +18,14 @@ type RegistrationStep = 'form' | 'camera' | 'preview' | 'submitting' | 'success'
 function PasswordStrengthIndicator({ password }: { password: string }) {
   const getStrength = () => {
     if (!password) return { level: 0, label: '', color: '' };
-    
+
     let strength = 0;
     if (password.length >= 8) strength++;
     if (password.length >= 12) strength++;
     if (/[A-Z]/.test(password)) strength++;
     if (/[0-9]/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
-    
+
     if (strength <= 1) return { level: 1, label: 'Weak', color: 'bg-destructive' };
     if (strength <= 2) return { level: 2, label: 'Fair', color: 'bg-warning' };
     if (strength <= 3) return { level: 3, label: 'Good', color: 'bg-accent-teal' };
@@ -66,7 +68,7 @@ export function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
+
   // Validation errors
   const [errors, setErrors] = useState<{
     fullName?: string;
@@ -75,7 +77,7 @@ export function RegisterForm() {
     password?: string;
     confirmPassword?: string;
   }>({});
-  
+
   // Camera/image state
   const [consentGiven, setConsentGiven] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -93,40 +95,40 @@ export function RegisterForm() {
 
   const validateForm = () => {
     const newErrors: typeof errors = {};
-    
+
     if (!fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
-    
+
     if (!studentId.trim()) {
       newErrors.studentId = 'Student ID is required';
     }
-    
+
     if (!email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!validateEmail(email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     if (!password) {
       newErrors.password = 'Password is required';
     } else if (password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
-    
+
     if (!confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (password !== confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -135,13 +137,13 @@ export function RegisterForm() {
       });
       return;
     }
-    
+
     setStep('camera');
   };
 
   const handleCapture = useCallback(async () => {
     if (!webcamRef.current) return;
-    
+
     const imageSrc = webcamRef.current.getScreenshot();
     if (!imageSrc) {
       toast({
@@ -219,8 +221,20 @@ export function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 1. Use the captured base64 image directly
+      // In a real production app, we would upload to S3 here.
+      // For this local version, we store the base64 string directly in the DB.
+      const publicUrl = capturedImage;
+
+      // 2. Register User
+      await api.post('/auth/register', {
+        name: fullName,
+        studentId,
+        email,
+        password,
+        imageHash,
+        imageUrl: publicUrl
+      });
 
       // Mock successful registration
       setStep('success');
@@ -228,10 +242,19 @@ export function RegisterForm() {
         title: "Registration submitted!",
         description: "Your registration is pending verification.",
       });
-    } catch {
+    } catch (error: any) {
+      console.error(error);
+      let msg = "Something went wrong. Please try again.";
+
+      if (error.code === 'ERR_NETWORK' || !error.response) {
+        msg = "Unable to connect to the server. Please check if the backend is running.";
+      } else if (error.response?.data?.message) {
+        msg = error.response.data.message;
+      }
+
       toast({
         title: "Registration failed",
-        description: "Something went wrong. Please try again.",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -272,11 +295,11 @@ export function RegisterForm() {
           {step === 'form' ? 'Register to Vote' : step === 'camera' ? 'Capture Your Photo' : 'Confirm Your Photo'}
         </CardTitle>
         <CardDescription>
-          {step === 'form' 
+          {step === 'form'
             ? 'Create your voter account to participate in elections'
             : step === 'camera'
-            ? 'We need your photo for identity verification'
-            : 'Review your photo before submitting'}
+              ? 'We need your photo for identity verification'
+              : 'Review your photo before submitting'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -431,7 +454,7 @@ export function RegisterForm() {
                 <Shield className="w-5 h-5 text-primary mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-foreground mb-3">
-                    I consent to allow this site to use my camera for voter registration. 
+                    I consent to allow this site to use my camera for voter registration.
                     My photo will be used only for identity verification and retained for audit purposes for 6 months.
                   </p>
                   <p className="text-xs text-muted-foreground mb-3">
@@ -539,9 +562,9 @@ export function RegisterForm() {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Retake
               </Button>
-              <Button 
-                variant="hero" 
-                onClick={handleSubmitRegistration} 
+              <Button
+                variant="hero"
+                onClick={handleSubmitRegistration}
                 className="flex-1"
                 disabled={isSubmitting}
               >

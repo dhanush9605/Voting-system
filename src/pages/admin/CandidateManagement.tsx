@@ -1,310 +1,226 @@
-import { useState } from "react";
-import { Plus, Edit2, Trash2, Search, User } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Search, Trash2, Edit, Save, X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import api from "@/lib/api";
 import { Candidate } from "@/types";
-
-// Mock candidates data
-const initialCandidates: Candidate[] = [
-  {
-    id: "1",
-    name: "Alex Thompson",
-    party: "Student Progress Alliance",
-    manifesto: "Committed to improving campus facilities, extending library hours, and creating more student job opportunities. I believe in transparent governance and open communication with all students.",
-    avatarUrl: undefined,
-    voteCount: 245,
-  },
-  {
-    id: "2",
-    name: "Maya Rodriguez",
-    party: "Green Campus Initiative",
-    manifesto: "Focused on environmental sustainability, reducing campus carbon footprint, and promoting eco-friendly practices. Together we can build a greener future for our college.",
-    avatarUrl: undefined,
-    voteCount: 312,
-  },
-  {
-    id: "3",
-    name: "Jordan Lee",
-    party: "Innovation Forward",
-    manifesto: "Advocate for digital transformation, improved online resources, and modern learning tools. Let's bring our campus into the future with technology that works for everyone.",
-    avatarUrl: undefined,
-    voteCount: 189,
-  },
-];
+import { compressImage } from "@/lib/image-utils";
 
 const CandidateManagement = () => {
   const { toast } = useToast();
-  const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-  
-  // Form state
-  const [formName, setFormName] = useState("");
-  const [formParty, setFormParty] = useState("");
-  const [formManifesto, setFormManifesto] = useState("");
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCandidate, setEditingCandidate] = useState<Candidate | null>(null);
 
-  const filteredCandidates = candidates.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.party?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Form State
+  const [name, setName] = useState("");
+  const [party, setParty] = useState("");
+  const [manifesto, setManifesto] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const resetForm = () => {
-    setFormName("");
-    setFormParty("");
-    setFormManifesto("");
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  const fetchCandidates = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get('/candidates');
+      setCandidates(data);
+    } catch (error) {
+      console.error("Failed to fetch candidates", error);
+      toast({
+        title: "Error fetching candidates",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddCandidate = () => {
-    if (!formName) {
-      toast({ title: "Name is required", variant: "destructive" });
+  const handleOpenDialog = (candidate?: Candidate) => {
+    if (candidate) {
+      setEditingCandidate(candidate);
+      setName(candidate.name);
+      setParty(candidate.party || "");
+      setManifesto(candidate.manifesto || "");
+      setImageUrl(candidate.imageUrl || ""); // Changed from avatarUrl to match backend
+    } else {
+      setEditingCandidate(null);
+      setName("");
+      setParty("");
+      setManifesto("");
+      setImageUrl("");
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Invalid file", description: "Please upload an image.", variant: "destructive" });
       return;
     }
 
-    const newCandidate: Candidate = {
-      id: Date.now().toString(),
-      name: formName,
-      party: formParty || undefined,
-      manifesto: formManifesto || undefined,
-      voteCount: 0,
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const dataUrl = event.target?.result as string;
+      try {
+        const compressed = await compressImage(dataUrl);
+        setImageUrl(compressed); // Store base64 directly
+      } catch (err) {
+        console.error(err);
+        toast({ title: "Image processing failed", variant: "destructive" });
+      }
     };
-
-    setCandidates([...candidates, newCandidate]);
-    toast({ title: "Candidate added successfully" });
-    setIsAddDialogOpen(false);
-    resetForm();
+    reader.readAsDataURL(file);
   };
 
-  const handleEditCandidate = () => {
-    if (!selectedCandidate || !formName) return;
+  const handleSubmit = async () => {
+    if (!name || !party || !manifesto) {
+      toast({ title: "Missing fields", description: "Name, Party, and Manifesto are required.", variant: "destructive" });
+      return;
+    }
 
-    setCandidates(candidates.map(c => 
-      c.id === selectedCandidate.id 
-        ? { ...c, name: formName, party: formParty || undefined, manifesto: formManifesto || undefined }
-        : c
-    ));
-    toast({ title: "Candidate updated successfully" });
-    setIsEditDialogOpen(false);
-    setSelectedCandidate(null);
-    resetForm();
+    try {
+      if (editingCandidate) {
+        // Update
+        const { data } = await api.put(`/candidates/${editingCandidate._id || editingCandidate.id}`, { // Handle both _id and id
+          name,
+          party,
+          manifesto,
+          imageUrl
+        });
+
+        setCandidates(prev => prev.map(c => (c.id === editingCandidate.id || c._id === editingCandidate._id) ? data : c));
+        toast({ title: "Candidate updated successfully" });
+      } else {
+        // Create
+        const { data } = await api.post('/candidates', {
+          name,
+          party,
+          manifesto,
+          imageUrl
+        });
+        setCandidates([...candidates, data]);
+        toast({ title: "Candidate created successfully" });
+      }
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      console.error(error);
+      toast({ title: "Operation failed", description: error.response?.data?.message || "Something went wrong", variant: "destructive" });
+    }
   };
 
-  const handleDeleteCandidate = () => {
-    if (!selectedCandidate) return;
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this candidate?")) return;
 
-    setCandidates(candidates.filter(c => c.id !== selectedCandidate.id));
-    toast({ title: "Candidate deleted successfully" });
-    setIsDeleteDialogOpen(false);
-    setSelectedCandidate(null);
-  };
-
-  const openEditDialog = (candidate: Candidate) => {
-    setSelectedCandidate(candidate);
-    setFormName(candidate.name);
-    setFormParty(candidate.party || "");
-    setFormManifesto(candidate.manifesto || "");
-    setIsEditDialogOpen(true);
-  };
-
-  const openDeleteDialog = (candidate: Candidate) => {
-    setSelectedCandidate(candidate);
-    setIsDeleteDialogOpen(true);
+    try {
+      await api.delete(`/candidates/${id}`);
+      setCandidates(prev => prev.filter(c => c._id !== id && c.id !== id));
+      toast({ title: "Candidate deleted" });
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Delete failed", variant: "destructive" });
+    }
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Candidate Management</h1>
-          <p className="text-muted-foreground mt-1">Add, edit, or remove election candidates</p>
+          <p className="text-muted-foreground mt-1">Manage election candidates</p>
         </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button variant="hero">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Candidate
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Candidate</DialogTitle>
-              <DialogDescription>Fill in the details to add a new candidate to the election.</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="Enter candidate name"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="party">Party (optional)</Label>
-                <Input
-                  id="party"
-                  placeholder="Enter party name"
-                  value={formParty}
-                  onChange={(e) => setFormParty(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="manifesto">Manifesto (optional)</Label>
-                <Textarea
-                  id="manifesto"
-                  placeholder="Enter candidate manifesto"
-                  value={formManifesto}
-                  onChange={(e) => setFormManifesto(e.target.value)}
-                  rows={4}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-              <Button variant="hero" onClick={handleAddCandidate}>Add Candidate</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => handleOpenDialog()} variant="hero">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Candidate
+        </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Search candidates..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Candidates Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCandidates.map((candidate) => (
-          <Card key={candidate.id} className="hover:shadow-elevated transition-shadow">
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center">
-                    {candidate.avatarUrl ? (
-                      <img src={candidate.avatarUrl} alt={candidate.name} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <User className="w-6 h-6 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{candidate.name}</CardTitle>
-                    {candidate.party && (
-                      <p className="text-sm text-muted-foreground">{candidate.party}</p>
-                    )}
-                  </div>
+        {candidates.map(candidate => (
+          <Card key={candidate._id || candidate.id} className="overflow-hidden">
+            <div className="aspect-video bg-muted relative">
+              {candidate.imageUrl ? (
+                <img src={candidate.imageUrl} alt={candidate.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  No Image
                 </div>
-              </div>
+              )}
+            </div>
+            <CardHeader>
+              <CardTitle>{candidate.name}</CardTitle>
+              <CardDescription>{candidate.party}</CardDescription>
             </CardHeader>
             <CardContent>
-              {candidate.manifesto && (
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                  {candidate.manifesto}
-                </p>
-              )}
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Votes: </span>
-                  <span className="font-semibold text-foreground">{candidate.voteCount}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => openEditDialog(candidate)}
-                  >
-                    <Edit2 className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    onClick={() => openDeleteDialog(candidate)}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
+              <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                {candidate.manifesto}
+              </p>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={() => handleOpenDialog(candidate)}>
+                  <Edit className="w-4 h-4 mr-1" /> Edit
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(candidate._id || candidate.id)}>
+                  <Trash2 className="w-4 h-4 mr-1" /> Delete
+                </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {filteredCandidates.length === 0 && (
-        <div className="text-center py-12">
-          <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-2">No candidates found</h3>
-          <p className="text-muted-foreground">Add your first candidate to get started.</p>
-        </div>
-      )}
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Edit Candidate</DialogTitle>
-            <DialogDescription>Update the candidate's information.</DialogDescription>
+            <DialogTitle>{editingCandidate ? "Edit Candidate" : "Add New Candidate"}</DialogTitle>
+            <DialogDescription>
+              Enter the details of the candidate for the upcoming election.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit-name">Name *</Label>
-              <Input
-                id="edit-name"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-              />
+              <label className="text-sm font-medium">Full Name</label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Jane Doe" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-party">Party</Label>
-              <Input
-                id="edit-party"
-                value={formParty}
-                onChange={(e) => setFormParty(e.target.value)}
-              />
+              <label className="text-sm font-medium">Party / Affiliation</label>
+              <Input value={party} onChange={(e) => setParty(e.target.value)} placeholder="e.g. Independent, Science Club" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="edit-manifesto">Manifesto</Label>
-              <Textarea
-                id="edit-manifesto"
-                value={formManifesto}
-                onChange={(e) => setFormManifesto(e.target.value)}
-                rows={4}
-              />
+              <label className="text-sm font-medium">Manifesto / Bio</label>
+              <Textarea value={manifesto} onChange={(e) => setManifesto(e.target.value)} placeholder="Short description of goals..." />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Photo</label>
+              <div className="flex gap-4 items-center">
+                {imageUrl && (
+                  <div className="w-16 h-16 rounded bg-muted overflow-hidden">
+                    <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="w-4 h-4 mr-2" />
+                  {imageUrl ? "Change Photo" : "Upload Photo"}
+                </Button>
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-            <Button variant="hero" onClick={handleEditCandidate}>Save Changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Candidate</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete {selectedCandidate?.name}? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteCandidate}>Delete</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button variant="hero" onClick={handleSubmit}>
+              {editingCandidate ? "Update Candidate" : "Create Candidate"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

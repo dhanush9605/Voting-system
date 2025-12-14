@@ -11,11 +11,11 @@ import { SITE_NAME } from "@/lib/site-config";
 const AdminSettings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   // Site settings
   const [siteName, setSiteName] = useState<string>(SITE_NAME);
   const [isSavingSite, setIsSavingSite] = useState(false);
-  
+
   // Password change
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -35,23 +35,23 @@ const AdminSettings = () => {
 
   const handleSaveSiteName = async () => {
     setSiteNameError('');
-    
+
     if (!siteName.trim()) {
       setSiteNameError('Site name is required');
       return;
     }
-    
+
     if (siteName.trim().length < 2) {
       setSiteNameError('Site name must be at least 2 characters');
       return;
     }
 
     setIsSavingSite(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       toast({
         title: "Settings saved",
         description: "Site name has been updated successfully.",
@@ -69,23 +69,23 @@ const AdminSettings = () => {
 
   const validatePassword = () => {
     const errors: typeof passwordErrors = {};
-    
+
     if (!oldPassword) {
       errors.oldPassword = 'Current password is required';
     }
-    
+
     if (!newPassword) {
       errors.newPassword = 'New password is required';
     } else if (newPassword.length < 8) {
       errors.newPassword = 'Password must be at least 8 characters';
     }
-    
+
     if (!confirmPassword) {
       errors.confirmPassword = 'Please confirm your new password';
     } else if (newPassword !== confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setPasswordErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -94,16 +94,16 @@ const AdminSettings = () => {
     if (!validatePassword()) return;
 
     setIsChangingPassword(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       toast({
         title: "Password changed",
         description: "Your password has been updated successfully.",
       });
-      
+
       // Reset form
       setOldPassword('');
       setNewPassword('');
@@ -158,9 +158,9 @@ const AdminSettings = () => {
                 <p className="text-sm text-destructive">{siteNameError}</p>
               )}
             </div>
-            
-            <Button 
-              onClick={handleSaveSiteName} 
+
+            <Button
+              onClick={handleSaveSiteName}
               disabled={isSavingSite}
               className="w-full sm:w-auto"
             >
@@ -196,14 +196,14 @@ const AdminSettings = () => {
                 {user?.name || 'Admin User'}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Email</Label>
               <div className="p-3 bg-muted/50 rounded-lg text-foreground">
-                {user?.email || 'admin@example.com'}
+                {user?.email || 'admin@verification.com'}
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label>Role</Label>
               <div className="p-3 bg-muted/50 rounded-lg text-foreground capitalize">
@@ -254,7 +254,7 @@ const AdminSettings = () => {
                   <p className="text-sm text-destructive">{passwordErrors.oldPassword}</p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <div className="relative">
@@ -282,7 +282,7 @@ const AdminSettings = () => {
                 )}
                 <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <div className="relative">
@@ -315,8 +315,8 @@ const AdminSettings = () => {
                 )}
               </div>
             </div>
-            
-            <Button 
+
+            <Button
               onClick={handleChangePassword}
               disabled={isChangingPassword}
               className="mt-6"

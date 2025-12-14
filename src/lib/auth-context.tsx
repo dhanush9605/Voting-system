@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { User, UserRole, AuthState } from '@/types';
+import api from './api';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string, role: UserRole) => Promise<void>;
@@ -10,147 +11,87 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for development
-const MOCK_USERS: Record<string, { password: string; user: User }> = {
-  'admin@example.com': {
-    password: 'AdminPass123',
-    user: {
-      id: 'admin-1',
-      name: 'Admin User',
-      email: 'admin@example.com',
-      role: 'admin',
-      createdAt: new Date().toISOString(),
-    },
-  },
-  'voter@example.com': {
-    password: 'VoterPass123',
-    user: {
-      id: 'voter-1',
-      name: 'John Voter',
-      email: 'voter@example.com',
-      studentId: 'STU001',
-      role: 'voter',
-      hasVoted: false,
-      verificationStatus: 'verified',
-      createdAt: new Date().toISOString(),
-    },
-  },
-  'candidate@example.com': {
-    password: 'CandidatePass123',
-    user: {
-      id: 'candidate-1',
-      name: 'Jane Candidate',
-      email: 'candidate@example.com',
-      role: 'candidate',
-      createdAt: new Date().toISOString(),
-    },
-  },
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     user: null,
-    token: null,
+    token: null, // Token is handled via httpOnly cookie
     isAuthenticated: false,
     isLoading: true,
   });
 
-  useEffect(() => {
-    // Check for existing session
-    const storedToken = sessionStorage.getItem('auth_token');
-    const storedUser = sessionStorage.getItem('auth_user');
-    
-    if (storedToken && storedUser) {
+  const checkAuth = useCallback(async () => {
+    try {
+      const { data } = await api.get('/auth/profile');
       setState({
-        user: JSON.parse(storedUser),
-        token: storedToken,
+        user: data,
+        token: 'cookie', // Placeholder
         isAuthenticated: true,
         isLoading: false,
       });
-    } else {
-      setState(prev => ({ ...prev, isLoading: false }));
+    } catch (error) {
+      setState({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
     }
   }, []);
 
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   const login = useCallback(async (email: string, password: string, role: UserRole) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    try {
+      const { data } = await api.post('/auth/login', { email, password });
 
-    const mockUser = MOCK_USERS[email.toLowerCase()];
-    
-    if (!mockUser || mockUser.password !== password) {
-      throw new Error('Invalid email or password');
+      if (data.role !== role && role !== 'admin') { // Admin can login anywhere usually, or restrict
+        // For strict role checking:
+        if (data.role !== role) {
+          await api.post('/auth/logout');
+          throw new Error(`This account is not registered as a ${role}`);
+        }
+      }
+
+      setState({
+        user: data,
+        token: 'cookie',
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Login failed';
+      throw new Error(message);
     }
-
-    if (mockUser.user.role !== role) {
-      throw new Error(`This account is not registered as a ${role}`);
-    }
-
-    const token = `mock-token-${Date.now()}`;
-    
-    sessionStorage.setItem('auth_token', token);
-    sessionStorage.setItem('auth_user', JSON.stringify(mockUser.user));
-
-    setState({
-      user: mockUser.user,
-      token,
-      isAuthenticated: true,
-      isLoading: false,
-    });
   }, []);
 
   const loginWithStudentId = useCallback(async (studentId: string, otp: string) => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-
-    // Mock: accept any 6-digit OTP for demo
-    if (otp.length !== 6) {
-      throw new Error('Invalid OTP');
-    }
-
-    const mockVoter: User = {
-      id: `voter-${studentId}`,
-      name: 'Student Voter',
-      studentId,
-      role: 'voter',
-      hasVoted: false,
-      verificationStatus: 'verified',
-      createdAt: new Date().toISOString(),
-    };
-
-    const token = `mock-token-${Date.now()}`;
-    
-    sessionStorage.setItem('auth_token', token);
-    sessionStorage.setItem('auth_user', JSON.stringify(mockVoter));
-
-    setState({
-      user: mockVoter,
-      token,
-      isAuthenticated: true,
-      isLoading: false,
-    });
+    // TODO: Implement student ID login API if needed
+    // For now, mocking or keeping as is if backend doesn't support it yet
+    // The instructions primarily focused on Email/Password and Registration
+    throw new Error("Student ID login not implemented on backend yet");
   }, []);
 
-  const logout = useCallback(() => {
-    sessionStorage.removeItem('auth_token');
-    sessionStorage.removeItem('auth_user');
-    
-    setState({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout failed', error);
+    } finally {
+      setState({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    }
   }, []);
 
   const updateUser = useCallback((updates: Partial<User>) => {
     setState(prev => {
       if (!prev.user) return prev;
-      
-      const updatedUser = { ...prev.user, ...updates };
-      sessionStorage.setItem('auth_user', JSON.stringify(updatedUser));
-      
-      return { ...prev, user: updatedUser };
+      return { ...prev, user: { ...prev.user, ...updates } };
     });
   }, []);
 

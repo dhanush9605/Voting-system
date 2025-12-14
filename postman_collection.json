@@ -1,0 +1,94 @@
+{
+    "info": {
+        "_postman_id": "c1f2e3d4-5b6a-7c8d-9e0f-1a2b3c4d5e6f",
+        "name": "CampusVote",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\",\n    \"studentId\": \"STU123456\",\n    \"imageHash\": \"dummyhash\",\n    \"imageUrl\": \"http://example.com/image.jpg\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/profile",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "profile"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:5000/api"
+        }
+    ]
+}
