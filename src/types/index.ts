@@ -23,6 +23,7 @@ export interface AuthState {
 
 // Candidate Types
 export interface Candidate {
+  _id?: string;
   id: string;
   name: string;
   party?: string;
@@ -97,4 +98,13 @@ export interface DashboardStats {
   totalVotesCast: number;
   totalCandidates: number;
   resultsPublished: boolean;
+}
+
+export interface ElectionConfig {
+  _id?: string;
+  title: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  updatedAt?: string;
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
-import { User, Check, X, AlertTriangle } from "lucide-react";
+import { User, Check, X, AlertTriangle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { Candidate } from "@/types";
+import { Candidate, ElectionConfig } from "@/types";
 
 // Mock candidates
 
@@ -27,9 +27,39 @@ const VotePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voteReceipt, setVoteReceipt] = useState<{ voteId: string; timestamp: string } | null>(null);
 
+  const [election, setElection] = useState<ElectionConfig | null>(null);
+  const [isElectionActive, setIsElectionActive] = useState(true); // Default true until checked
+  const [electionError, setElectionError] = useState('');
+
   useEffect(() => {
     fetchCandidates();
+    fetchElectionConfig();
   }, []);
+
+  const fetchElectionConfig = async () => {
+    try {
+      const { data } = await api.get('/election');
+      if (data) {
+        setElection(data);
+        const now = new Date();
+        const start = new Date(data.startDate);
+        const end = new Date(data.endDate);
+
+        if (now < start) {
+          setIsElectionActive(false);
+          setElectionError(`Voting starts on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}`);
+        } else if (now > end) {
+          setIsElectionActive(false);
+          setElectionError(`Voting ended on ${end.toLocaleDateString()} at ${end.toLocaleTimeString()}`);
+        } else {
+          setIsElectionActive(true);
+          setElectionError('');
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch election info");
+    }
+  };
 
   const fetchCandidates = async () => {
     try {
@@ -73,6 +103,26 @@ const VotePage = () => {
         <h1 className="text-2xl font-bold text-foreground mb-4">Verification Required</h1>
         <p className="text-muted-foreground mb-6">
           Your account must be verified before you can vote. Please wait for an administrator to verify your registration.
+        </p>
+        <Button onClick={() => navigate('/voter/dashboard')} variant="outline">
+          Return to Dashboard
+        </Button>
+      </div>
+    );
+  }
+
+
+
+  // Check if election is active
+  if (!isElectionActive) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-12 animate-fade-in">
+        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+          <Clock className="w-10 h-10 text-muted-foreground" />
+        </div>
+        <h1 className="text-2xl font-bold text-foreground mb-4">Election Not Active</h1>
+        <p className="text-muted-foreground mb-6">
+          {electionError || "Voting is currently closed."}
         </p>
         <Button onClick={() => navigate('/voter/dashboard')} variant="outline">
           Return to Dashboard
@@ -191,7 +241,7 @@ const VotePage = () => {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {candidates.map((candidate) => (
           <Card
-            key={candidate.id}
+            key={candidate._id || candidate.id}
             className="cursor-pointer hover:shadow-elevated transition-all hover:border-primary/30"
             onClick={() => handleSelectCandidate(candidate)}
           >

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, UserCheck, UserX, Eye, Download, CheckCircle, XCircle } from "lucide-react";
+import { Search, Filter, UserCheck, UserX, Eye, Download, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -134,6 +134,30 @@ const VoterManagement = () => {
       toast({
         title: "Action failed",
         description: "Could not update voter status.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDelete = async (voterId: string) => {
+    if (!window.confirm("Are you sure you want to delete this voter? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/admin/voters/${voterId}`);
+
+      setVoters(voters.filter(v => v.id !== voterId));
+
+      toast({
+        title: "Voter deleted successfully",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Delete failed",
+        description: "Could not delete voter.",
         variant: "destructive"
       });
     }
@@ -329,6 +353,15 @@ const VoterManagement = () => {
                               </Button>
                             </>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(voter.id)}
+                            className="text-muted-foreground hover:text-destructive"
+                            title="Delete Voter"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>

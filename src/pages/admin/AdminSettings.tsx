@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Settings, User, Lock, Eye, EyeOff, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { SITE_NAME } from "@/lib/site-config";
+import { format } from "date-fns";
+import api from "@/lib/api";
+import { ElectionConfig } from "@/types";
+import { Calendar } from "lucide-react";
 
 const AdminSettings = () => {
   const { toast } = useToast();
@@ -24,6 +28,79 @@ const AdminSettings = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // Election Info
+  const [electionConfig, setElectionConfig] = useState<ElectionConfig>({
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: ''
+  });
+  const [isSavingElection, setIsSavingElection] = useState(false);
+
+  useEffect(() => {
+    fetchElectionConfig();
+  }, []);
+
+  const fetchElectionConfig = async () => {
+    try {
+      const { data } = await api.get('/admin/election');
+      if (data) {
+        // Format dates for input type="datetime-local" if needed, 
+        // or just keep ISO strings if using date picker.
+        // The standard datetime-local input needs "YYYY-MM-DDThh:mm" format
+        const formatDateForInput = (dateString: string) => {
+          if (!dateString) return '';
+          return new Date(dateString).toISOString().slice(0, 16);
+        };
+
+        setElectionConfig({
+          ...data,
+          startDate: formatDateForInput(data.startDate),
+          endDate: formatDateForInput(data.endDate)
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch election config", error);
+    }
+  };
+
+  const handleSaveElection = async () => {
+    if (!electionConfig.title || !electionConfig.startDate || !electionConfig.endDate) {
+      toast({
+        title: "Validation Error",
+        description: "Title and dates are required.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (new Date(electionConfig.startDate) >= new Date(electionConfig.endDate)) {
+      toast({
+        title: "Invalid Dates",
+        description: "End date must be after start date.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSavingElection(true);
+    try {
+      await api.put('/admin/election', electionConfig);
+      toast({
+        title: "Election Updated",
+        description: "Election information saved successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save election info.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingElection(false);
+    }
+  };
 
   // Validation errors
   const [siteNameError, setSiteNameError] = useState('');
@@ -96,8 +173,10 @@ const AdminSettings = () => {
     setIsChangingPassword(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await api.put('/auth/update-password', {
+        currentPassword: oldPassword,
+        newPassword
+      });
 
       toast({
         title: "Password changed",
@@ -129,6 +208,68 @@ const AdminSettings = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Election Information */}
+        <Card className="lg:col-span-2 border-accent-teal/20 bg-accent-teal/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-accent-teal/10 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-accent-teal" />
+              </div>
+              <div>
+                <CardTitle>Election Information</CardTitle>
+                <CardDescription>Configure election details and voting period</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="electionTitle">Election Title</Label>
+                <Input
+                  id="electionTitle"
+                  value={electionConfig.title}
+                  onChange={(e) => setElectionConfig({ ...electionConfig, title: e.target.value })}
+                  placeholder="e.g. Student Council 2024"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="electionDesc">Description</Label>
+                <Input
+                  id="electionDesc"
+                  value={electionConfig.description}
+                  onChange={(e) => setElectionConfig({ ...electionConfig, description: e.target.value })}
+                  placeholder="Short description of the election"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date & Time</Label>
+                <Input
+                  id="startDate"
+                  type="datetime-local"
+                  value={electionConfig.startDate}
+                  onChange={(e) => setElectionConfig({ ...electionConfig, startDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="endDate">End Date & Time</Label>
+                <Input
+                  id="endDate"
+                  type="datetime-local"
+                  value={electionConfig.endDate}
+                  onChange={(e) => setElectionConfig({ ...electionConfig, endDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleSaveElection}
+              disabled={isSavingElection}
+              className="mt-2"
+            >
+              {isSavingElection ? 'Saving...' : 'Update Election Info'}
+            </Button>
+          </CardContent>
+        </Card>
         {/* Site Settings */}
         <Card>
           <CardHeader>

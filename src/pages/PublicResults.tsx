@@ -1,25 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Vote, BarChart3, Trophy, Users, Clock, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
-
-const resultsData = [
-  { name: "Maya Rodriguez", votes: 312, party: "Green Campus Initiative", color: "hsl(var(--accent-coral))" },
-  { name: "Alex Thompson", votes: 245, party: "Student Progress Alliance", color: "hsl(var(--accent-teal))" },
-  { name: "Jordan Lee", votes: 189, party: "Innovation Forward", color: "hsl(var(--accent-purple))" },
-  { name: "Abstain", votes: 56, party: "No Vote", color: "hsl(var(--muted-foreground))" },
-];
-
-const totalVotes = resultsData.reduce((sum, r) => sum + r.votes, 0);
-const winner = resultsData[0];
-
-// Mock published state - in real app this would come from API
-const isPublished = true;
-const publishedAt = "2024-01-20T18:30:00Z";
+import api from "@/lib/api";
 
 const PublicResults = () => {
+  const [resultsData, setResultsData] = useState<any[]>([]);
+  const [totalVotes, setTotalVotes] = useState(0);
+  const [winner, setWinner] = useState<any>(null);
+  const [isPublished, setIsPublished] = useState(false);
+  const [publishedAt, setPublishedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        const { data } = await api.get('/election/results');
+        setResultsData(data.results);
+        setTotalVotes(data.totalVotes);
+        setWinner(data.winner);
+        setIsPublished(true);
+        setPublishedAt(data.publishedAt);
+      } catch (error) {
+        setIsPublished(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   if (!isPublished) {
     return (
       <div className="min-h-screen bg-background">
@@ -85,7 +105,7 @@ const PublicResults = () => {
               Student Council Election 2024
             </h1>
             <p className="text-muted-foreground">
-              Results published on {new Date(publishedAt).toLocaleDateString('en-US', {
+              Results published on {publishedAt && new Date(publishedAt).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',

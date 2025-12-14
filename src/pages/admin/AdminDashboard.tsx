@@ -3,31 +3,45 @@ import { StatCard, Card, CardContent, CardHeader, CardTitle } from "@/components
 import { useAuth } from "@/lib/auth-context";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 
-const pieData = [
-  { name: 'Engineering', value: 42, color: 'hsl(var(--accent-teal))' },
-  { name: 'Arts', value: 28, color: 'hsl(var(--accent-coral))' },
-  { name: 'Science', value: 18, color: 'hsl(var(--accent-purple))' },
-  { name: 'Business', value: 12, color: 'hsl(var(--accent-pink))' },
-];
-
-const barData = [
-  { day: 'Mon', votes: 45 },
-  { day: 'Tue', votes: 78 },
-  { day: 'Wed', votes: 112 },
-  { day: 'Thu', votes: 156 },
-  { day: 'Fri', votes: 189 },
-  { day: 'Sat', votes: 134 },
-];
-
-const recentActivity = [
-  { id: 1, name: 'Sarah Johnson', action: 'Registered', time: '2 mins ago', status: 'pending' },
-  { id: 2, name: 'Michael Chen', action: 'Verified', time: '5 mins ago', status: 'verified' },
-  { id: 3, name: 'Emily Davis', action: 'Voted', time: '8 mins ago', status: 'voted' },
-  { id: 4, name: 'James Wilson', action: 'Registered', time: '12 mins ago', status: 'pending' },
-];
+import { useEffect, useState } from "react";
+import api from "@/lib/api";
+import { formatDistanceToNow } from "date-fns";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    totalRegistered: 0,
+    verifiedVoters: 0,
+    votesCast: 0,
+    candidates: 0
+  });
+
+  const [pieData, setPieData] = useState<{ name: string; value: number; color: string }[]>([]);
+  const [barData, setBarData] = useState<{ day: string; votes: number }[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const { data } = await api.get('/admin/dashboard');
+        setStats(data.stats);
+        setPieData(data.charts.pieData);
+        setBarData(data.charts.barData);
+        setRecentActivity(data.recentActivity);
+      } catch (error) {
+        console.error("Failed to fetch dashboard stats", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 text-center">Loading dashboard...</div>;
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -55,38 +69,38 @@ const AdminDashboard = () => {
           variant="coral"
           icon={<Users className="w-5 h-5" />}
           title="Total Registered"
-          value="1,247"
-          change="+12.5% This Month"
+          value={stats.totalRegistered.toLocaleString()}
+          change="Total users"
         />
         <StatCard
           variant="teal"
           icon={<UserCheck className="w-5 h-5" />}
           title="Verified Voters"
-          value="1,089"
-          change="+8.2% This Month"
+          value={stats.verifiedVoters.toLocaleString()}
+          change={`${stats.totalRegistered > 0 ? ((stats.verifiedVoters / stats.totalRegistered) * 100).toFixed(1) : 0}% Verified`}
         />
         <StatCard
           variant="pink"
           icon={<Vote className="w-5 h-5" />}
           title="Votes Cast"
-          value="856"
-          change="+15.3% This Month"
+          value={stats.votesCast.toLocaleString()}
+          change={`${stats.verifiedVoters > 0 ? ((stats.votesCast / stats.verifiedVoters) * 100).toFixed(1) : 0}% Turnout`}
         />
         <StatCard
           variant="purple"
           icon={<BarChart3 className="w-5 h-5" />}
           title="Candidates"
-          value="5"
+          value={stats.candidates.toLocaleString()}
           change="Active Election"
         />
       </div>
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Pie Chart - Votes by Department */}
+        {/* Pie Chart - Votes by Party */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold">Votes by Department</CardTitle>
+            <CardTitle className="text-lg font-semibold">Votes by Party</CardTitle>
             <button className="p-1 hover:bg-muted rounded-full transition-colors">
               <svg className="w-5 h-5 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
@@ -113,7 +127,7 @@ const AdminDashboard = () => {
                     ))}
                   </Pie>
                   <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-foreground text-2xl font-bold">
-                    856
+                    {stats.votesCast}
                   </text>
                 </PieChart>
               </ResponsiveContainer>
@@ -129,10 +143,10 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Bar Chart - Daily Votes */}
+        {/* Bar Chart - Daily Registrations */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold">Daily Voting Activity</CardTitle>
+            <CardTitle className="text-lg font-semibold">Daily Registrations</CardTitle>
             <div className="flex items-center gap-2 text-sm text-success">
               <TrendingUp className="w-4 h-4" />
               <span>+24%</span>
@@ -143,14 +157,14 @@ const AdminDashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={barData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="day" 
-                    axisLine={false} 
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
                     tickLine={false}
                     tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                   />
-                  <YAxis 
-                    axisLine={false} 
+                  <YAxis
+                    axisLine={false}
                     tickLine={false}
                     tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                   />
@@ -162,9 +176,9 @@ const AdminDashboard = () => {
                     }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
-                  <Bar 
-                    dataKey="votes" 
-                    fill="hsl(var(--accent-teal))" 
+                  <Bar
+                    dataKey="votes"
+                    fill="hsl(var(--accent-teal))"
                     radius={[8, 8, 0, 0]}
                   />
                 </BarChart>
@@ -203,15 +217,16 @@ const AdminDashboard = () => {
                       </div>
                     </td>
                     <td className="py-4 px-4 text-muted-foreground">{activity.action}</td>
-                    <td className="py-4 px-4 text-muted-foreground">{activity.time}</td>
+                    <td className="py-4 px-4 text-muted-foreground">
+                      {formatDistanceToNow(new Date(activity.time), { addSuffix: true })}
+                    </td>
                     <td className="py-4 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        activity.status === 'verified' 
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${activity.status === 'verified'
                           ? 'bg-success/10 text-success'
                           : activity.status === 'voted'
-                          ? 'bg-accent-teal/10 text-accent-teal'
-                          : 'bg-warning/10 text-warning'
-                      }`}>
+                            ? 'bg-accent-teal/10 text-accent-teal'
+                            : 'bg-warning/10 text-warning'
+                        }`}>
                         {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
                       </span>
                     </td>

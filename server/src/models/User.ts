@@ -24,6 +24,7 @@ export interface IUser extends Document {
     imageUrl?: string;
     refreshToken?: string;
     createdAt: Date;
+    updatedAt: Date;
 }
 
 const UserSchema: Schema = new Schema({

@@ -22,7 +22,7 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 // Refresh failed (token expired or invalid)
                 // Redirect to login or handle logout
-                if (window.location.pathname !== '/login') {
+                if (window.location.pathname !== '/login' && !originalRequest.url?.includes('/auth/profile')) {
                     window.location.href = '/login';
                 }
                 return Promise.reject(refreshError);

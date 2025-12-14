@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BarChart3, Send, Eye, EyeOff, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,15 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-
-const resultsData = [
-  { name: "Alex Thompson", votes: 245, party: "Student Progress Alliance", color: "hsl(var(--accent-teal))" },
-  { name: "Maya Rodriguez", votes: 312, party: "Green Campus Initiative", color: "hsl(var(--accent-coral))" },
-  { name: "Jordan Lee", votes: 189, party: "Innovation Forward", color: "hsl(var(--accent-purple))" },
-  { name: "Abstain", votes: 56, party: "No Vote", color: "hsl(var(--muted-foreground))" },
-];
-
-const totalVotes = resultsData.reduce((sum, r) => sum + r.votes, 0);
+import api from "@/lib/api";
 
 const ResultsManagement = () => {
   const { toast } = useToast();
@@ -23,24 +15,68 @@ const ResultsManagement = () => {
   const [publishedAt, setPublishedAt] = useState<string | null>(null);
   const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+  const [resultsData, setResultsData] = useState<any[]>([]);
+  const [totalVotes, setTotalVotes] = useState(0);
 
-  const handlePublish = () => {
+  useEffect(() => {
+    fetchResults();
+    fetchPublishStatus();
+  }, []);
+
+  const fetchResults = async () => {
+    try {
+      const { data } = await api.get('/admin/results');
+      setTotalVotes(data.totalVotes);
+      // Add colors to results
+      const coloredResults = data.results.map((r: any, index: number) => ({
+        ...r,
+        color: ['hsl(var(--accent-teal))', 'hsl(var(--accent-coral))', 'hsl(var(--accent-purple))', 'hsl(var(--accent-pink))'][index % 4]
+      }));
+      setResultsData(coloredResults);
+    } catch (error) {
+      console.error("Failed to fetch results", error);
+    }
+  };
+
+  const fetchPublishStatus = async () => {
+    try {
+      const { data } = await api.get('/admin/election');
+      if (data) {
+        setIsPublished(data.resultsPublished);
+        setPublishedAt(data.publishedAt);
+      }
+    } catch (error) {
+      console.error("Failed to fetch election status", error);
+    }
+  };
+
+  const handlePublish = async () => {
     if (confirmText !== "PUBLISH") {
       toast({ title: "Please type PUBLISH to confirm", variant: "destructive" });
       return;
     }
 
-    setIsPublished(true);
-    setPublishedAt(new Date().toISOString());
-    setIsPublishDialogOpen(false);
-    setConfirmText("");
-    toast({ title: "Results published successfully" });
+    try {
+      const { data } = await api.put('/admin/election/publish', { publish: true });
+      setIsPublished(data.resultsPublished);
+      setPublishedAt(data.publishedAt);
+      setIsPublishDialogOpen(false);
+      setConfirmText("");
+      toast({ title: "Results published successfully" });
+    } catch (error) {
+      toast({ title: "Failed to publish results", variant: "destructive" });
+    }
   };
 
-  const handleUnpublish = () => {
-    setIsPublished(false);
-    setPublishedAt(null);
-    toast({ title: "Results unpublished" });
+  const handleUnpublish = async () => {
+    try {
+      const { data } = await api.put('/admin/election/publish', { publish: false });
+      setIsPublished(false);
+      setPublishedAt(null);
+      toast({ title: "Results unpublished" });
+    } catch (error) {
+      toast({ title: "Failed to unpublish results", variant: "destructive" });
+    }
   };
 
   return (
@@ -51,7 +87,7 @@ const ResultsManagement = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Results Management</h1>
           <p className="text-muted-foreground mt-1">View and publish election results</p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {isPublished ? (
             <>
@@ -103,7 +139,7 @@ const ResultsManagement = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         {resultsData.slice(0, 3).map((result, index) => (
           <Card key={index}>
             <CardContent className="pt-6">
@@ -132,11 +168,11 @@ const ResultsManagement = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={resultsData} layout="vertical">
                 <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
                   tick={{ fill: 'hsl(var(--foreground))', fontSize: 14 }}
                   width={150}
                 />
@@ -182,9 +218,8 @@ const ResultsManagement = () => {
                   .map((result, index) => (
                     <tr key={index} className="border-b border-border last:border-0">
                       <td className="py-4 px-4">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                          index === 0 ? 'bg-accent-coral text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
+                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${index === 0 ? 'bg-accent-coral text-primary-foreground' : 'bg-muted text-muted-foreground'
+                          }`}>
                           {index + 1}
                         </span>
                       </td>
@@ -194,11 +229,11 @@ const ResultsManagement = () => {
                       <td className="py-4 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full rounded-full"
-                              style={{ 
+                              style={{
                                 width: `${(result.votes / totalVotes) * 100}%`,
-                                backgroundColor: result.color 
+                                backgroundColor: result.color
                               }}
                             />
                           </div>
@@ -241,8 +276,8 @@ const ResultsManagement = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPublishDialogOpen(false)}>Cancel</Button>
-            <Button 
-              variant="hero" 
+            <Button
+              variant="hero"
               onClick={handlePublish}
               disabled={confirmText !== "PUBLISH"}
             >
