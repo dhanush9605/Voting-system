@@ -4,7 +4,7 @@ import api from './api';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string, role: UserRole) => Promise<void>;
-  loginWithStudentId: (studentId: string, otp: string) => Promise<void>;
+  loginWithStudentId: (studentId: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -66,11 +66,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const loginWithStudentId = useCallback(async (studentId: string, otp: string) => {
-    // TODO: Implement student ID login API if needed
-    // For now, mocking or keeping as is if backend doesn't support it yet
-    // The instructions primarily focused on Email/Password and Registration
-    throw new Error("Student ID login not implemented on backend yet");
+  const loginWithStudentId = useCallback(async (studentId: string, password: string) => {
+    try {
+      const { data } = await api.post('/auth/login', { studentId, password });
+
+      setState({
+        user: data,
+        token: 'cookie',
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Login failed';
+      throw new Error(message);
+    }
   }, []);
 
   const logout = useCallback(async () => {

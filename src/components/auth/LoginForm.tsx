@@ -35,7 +35,7 @@ export function LoginForm() {
       if (loginMethod === 'email') {
         await login(email, password, role);
       } else {
-        await loginWithStudentId(studentId, otp);
+        await loginWithStudentId(studentId, password);
       }
 
       toast({
@@ -197,23 +197,19 @@ export function LoginForm() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="otp">One-Time Password</Label>
+                <Label htmlFor="password-student">Password</Label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    id="otp"
-                    type="text"
-                    placeholder="Enter 6-digit OTP"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    id="password-student"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
-                    maxLength={6}
                     required
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Enter the OTP sent to your registered email/phone
-                </p>
               </div>
             </>
           )}

@@ -2,15 +2,15 @@ import { useState, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { User, GraduationCap, Mail, Phone, Camera, Upload, Check, RefreshCw, Shield, Lock, Eye, EyeOff } from "lucide-react";
-import Webcam from "react-webcam";
+import { User, GraduationCap, Mail, Phone, Shield, Lock, Eye, EyeOff, Check, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { computeImageHash, compressImage, isCameraSupported } from "@/lib/image-utils";
+import { compressImage, isCameraSupported } from "@/lib/image-utils";
+import { FaceCapture } from "./FaceCapture";
 
 type RegistrationStep = 'form' | 'camera' | 'preview' | 'submitting' | 'success';
 
@@ -53,11 +53,16 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
   );
 }
 
+const VIDEO_CONSTRAINTS = {
+  width: 640,
+  height: 480,
+  facingMode: "user",
+};
+
 export function RegisterForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const webcamRef = useRef<Webcam>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   // Form state
   const [fullName, setFullName] = useState('');
@@ -141,66 +146,7 @@ export function RegisterForm() {
     setStep('camera');
   };
 
-  const handleCapture = useCallback(async () => {
-    if (!webcamRef.current) return;
 
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (!imageSrc) {
-      toast({
-        title: "Capture failed",
-        description: "Failed to capture image. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const compressed = await compressImage(imageSrc);
-      const hash = await computeImageHash(compressed);
-      setCapturedImage(compressed);
-      setImageHash(hash);
-      setStep('preview');
-    } catch {
-      toast({
-        title: "Processing failed",
-        description: "Failed to process image. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [toast]);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid file",
-        description: "Please upload an image file.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const dataUrl = event.target?.result as string;
-      try {
-        const compressed = await compressImage(dataUrl);
-        const hash = await computeImageHash(compressed);
-        setCapturedImage(compressed);
-        setImageHash(hash);
-        setStep('preview');
-      } catch {
-        toast({
-          title: "Processing failed",
-          description: "Failed to process image. Please try again.",
-          variant: "destructive",
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleRetake = () => {
     setCapturedImage(null);
@@ -274,12 +220,7 @@ export function RegisterForm() {
           <p className="text-muted-foreground mb-6">
             Your registration is pending verification. You will be notified once your account is approved.
           </p>
-          <div className="p-4 bg-muted/50 rounded-lg text-left mb-6">
-            <p className="text-sm text-muted-foreground mb-2">
-              <strong>Image Hash:</strong>
-            </p>
-            <code className="text-xs break-all">{imageHash}</code>
-          </div>
+
           <Button onClick={() => navigate('/login')} variant="hero" size="lg">
             Go to Login
           </Button>
@@ -454,92 +395,41 @@ export function RegisterForm() {
                 <Shield className="w-5 h-5 text-primary mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm text-foreground mb-3">
-                    I consent to allow this site to use my camera for voter registration.
-                    My photo will be used only for identity verification and retained for audit purposes for 6 months.
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Contact elections@civicpulse.app for removal requests.
+                    I consent to allow this site to use my camera for biometric identity verification.
+                    My face biometric data will be hashed and stored securely for login verification.
                   </p>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <Checkbox
                       checked={consentGiven}
                       onCheckedChange={(checked) => setConsentGiven(checked === true)}
                     />
-                    <span className="text-sm font-medium">I consent to the above terms</span>
+                    <span className="text-sm font-medium">I consent to Face Verification</span>
                   </label>
                 </div>
               </div>
             </div>
 
-            {/* Camera or file upload */}
-            {consentGiven && (
+            {/* Smart Camera */}
+            {consentGiven ? (
               <div className="space-y-4">
-                {cameraSupported && !cameraError ? (
-                  <div className="relative rounded-xl overflow-hidden bg-muted aspect-[4/3]">
-                    <Webcam
-                      ref={webcamRef}
-                      audio={false}
-                      screenshotFormat="image/jpeg"
-                      screenshotQuality={0.9}
-                      videoConstraints={{
-                        width: 640,
-                        height: 480,
-                        facingMode: "user",
-                      }}
-                      onUserMediaError={() => setCameraError("Camera access denied or not available")}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
-                      <Button onClick={handleCapture} variant="hero" size="lg" className="shadow-elevated">
-                        <Camera className="w-5 h-5 mr-2" />
-                        Capture
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-border rounded-xl bg-muted/50">
-                    <Upload className="w-12 h-12 text-muted-foreground mb-4" />
-                    <p className="text-sm text-muted-foreground mb-4 text-center">
-                      {cameraError || "Camera not available on this device"}
-                    </p>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <Button onClick={() => fileInputRef.current?.click()} variant="secondary" size="lg">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Photo
-                    </Button>
-                  </div>
-                )}
-
-                {/* Alternative file upload */}
-                {cameraSupported && !cameraError && (
-                  <div className="text-center">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Or upload a photo instead
-                    </button>
-                  </div>
-                )}
+                <FaceCapture
+                  onCapture={(imageSrc, descriptor) => {
+                    setCapturedImage(imageSrc);
+                    // Store the face descriptor as the hash for biometric matching
+                    setImageHash(JSON.stringify(Array.from(descriptor)));
+                    setStep('preview');
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="text-center p-8 border-2 border-dashed border-border rounded-xl">
+                <Shield className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Please accept the consent to start the secure blinking verification.</p>
               </div>
             )}
 
-            <Button variant="ghost" onClick={() => setStep('form')} className="w-full">
-              Back to form
+            <Button variant="ghost" onClick={() => setStep('form')} className="w-full mt-4">
+              Back to details
             </Button>
           </div>
         )}
@@ -550,12 +440,7 @@ export function RegisterForm() {
               <img src={capturedImage} alt="Captured" className="w-full aspect-[4/3] object-cover" />
             </div>
 
-            {imageHash && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm font-medium mb-2">Image Hash (SHA-256):</p>
-                <code className="text-xs text-muted-foreground break-all">{imageHash}</code>
-              </div>
-            )}
+
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={handleRetake} className="flex-1">

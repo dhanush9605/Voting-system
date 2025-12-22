@@ -69,7 +69,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       <div
         ref={ref}
         className={cn(
-          "rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:shadow-card",
+          "rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
           variantClasses[variant],
           className
         )}
@@ -81,11 +81,6 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
               {icon}
             </div>
           )}
-          <button className="p-1 hover:bg-foreground/5 rounded-full transition-colors">
-            <svg className="w-5 h-5 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-            </svg>
-          </button>
         </div>
         <div className="mt-4">
           <p className="text-sm text-muted-foreground font-medium">{title}</p>

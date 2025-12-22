@@ -20,6 +20,8 @@ export interface IUser extends Document {
     studentId?: string;
     verificationStatus?: VerificationStatus;
     hasVoted: boolean;
+    loginAttempts: number;
+    lockUntil?: Date;
     imageHash?: string;
     imageUrl?: string;
     refreshToken?: string;
@@ -43,6 +45,8 @@ const UserSchema: Schema = new Schema({
         default: VerificationStatus.PENDING
     },
     hasVoted: { type: Boolean, default: false },
+    loginAttempts: { type: Number, default: 0 },
+    lockUntil: { type: Date },
     imageHash: { type: String },
     imageUrl: { type: String },
     refreshToken: { type: String },

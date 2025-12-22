@@ -97,8 +97,10 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
         const candidatesCount = await Candidate.countDocuments();
 
         // Sum total votes from candidates
+        // Count users who have actually voted (Source of Truth for "Votes Cast")
+        const votesCast = await User.countDocuments({ role: UserRole.VOTER, hasVoted: true });
+
         const candidates = await Candidate.find();
-        const votesCast = candidates.reduce((acc, curr) => acc + (curr.voteCount || 0), 0);
 
         // Pie Chart Data: Votes by Party
         const votesByParty = await Candidate.aggregate([

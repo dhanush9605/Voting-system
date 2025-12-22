@@ -102,7 +102,7 @@ const PublicResults = () => {
               Official Results Published
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Student Council Election 2024
+              Student Council Election 2025
             </h1>
             <p className="text-muted-foreground">
               Results published on {publishedAt && new Date(publishedAt).toLocaleDateString('en-US', {
@@ -311,7 +311,7 @@ const PublicResults = () => {
       <footer className="py-12 bg-card border-t border-border">
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground text-sm">
-            © 2024 CampusVote. Secure elections for modern campuses.
+            ©2025 CampusVote. Secure elections for modern campuses.
           </p>
         </div>
       </footer>

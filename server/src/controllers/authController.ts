@@ -104,14 +104,54 @@ export const registerUser = async (req: Request, res: Response) => {
 // @access  Public
 export const loginUser = async (req: Request, res: Response) => {
     try {
-        const { email, password } = req.body;
+        const { email, studentId, password } = req.body;
 
-        const user = await User.findOne({ email });
+        // Construct query based on what was provided
+        const query = email ? { email } : { studentId };
 
-        if (user && (await bcrypt.compare(password, user.password as string))) {
+        if (!email && !studentId) {
+            res.status(400).json({ message: 'Please provide email or student ID' });
+            return;
+        }
+
+        const user = await User.findOne(query);
+
+        if (!user) {
+            res.status(401).json({ message: 'Invalid credentials' });
+            return;
+        }
+
+        // Check for Lockout
+        if (user.lockUntil && user.lockUntil > new Date()) {
+            const minutesLeft = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
+            res.status(423).json({
+                message: `Account is locked. Try again in ${minutesLeft} minutes.`
+            });
+            return;
+        }
+
+        if (await bcrypt.compare(password, user.password as string)) {
+            // Success: Reset attempts
+            user.loginAttempts = 0;
+            user.lockUntil = undefined;
+            await user.save();
+
             await sendTokenResponse(user, 200, res);
         } else {
-            res.status(401).json({ message: 'Invalid email or password' });
+            // Failure: Increment attempts
+            user.loginAttempts = (user.loginAttempts || 0) + 1;
+
+            if (user.loginAttempts >= 5) {
+                user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 mins
+                await user.save();
+                res.status(423).json({ message: 'Account is locked due to too many failed attempts. Try again in 15 minutes.' });
+                return;
+            }
+
+            await user.save();
+            res.status(401).json({
+                message: `Invalid credentials. ${5 - user.loginAttempts} attempts remaining.`
+            });
         }
     } catch (error: any) {
         res.status(500).json({ message: error.message });

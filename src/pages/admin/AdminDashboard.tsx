@@ -98,14 +98,9 @@ const AdminDashboard = () => {
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Pie Chart - Votes by Party */}
-        <Card>
+        <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-semibold">Votes by Party</CardTitle>
-            <button className="p-1 hover:bg-muted rounded-full transition-colors">
-              <svg className="w-5 h-5 text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-              </svg>
-            </button>
           </CardHeader>
           <CardContent>
             <div className="h-64 flex items-center justify-center">
@@ -144,7 +139,7 @@ const AdminDashboard = () => {
         </Card>
 
         {/* Bar Chart - Daily Registrations */}
-        <Card>
+        <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-semibold">Daily Registrations</CardTitle>
             <div className="flex items-center gap-2 text-sm text-success">
@@ -189,7 +184,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      <Card>
+      <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
           <button className="text-sm text-primary hover:underline">View all</button>
@@ -222,10 +217,10 @@ const AdminDashboard = () => {
                     </td>
                     <td className="py-4 px-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${activity.status === 'verified'
-                          ? 'bg-success/10 text-success'
-                          : activity.status === 'voted'
-                            ? 'bg-accent-teal/10 text-accent-teal'
-                            : 'bg-warning/10 text-warning'
+                        ? 'bg-success/10 text-success'
+                        : activity.status === 'voted'
+                          ? 'bg-accent-teal/10 text-accent-teal'
+                          : 'bg-warning/10 text-warning'
                         }`}>
                         {activity.status.charAt(0).toUpperCase() + activity.status.slice(1)}
                       </span>
