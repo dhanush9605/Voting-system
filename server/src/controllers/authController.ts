@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User, { IUser, UserRole } from '../models/User';
+import User, { IUser, UserRole, VerificationStatus } from '../models/User';
+import Notification from '../models/Notification';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 
@@ -87,8 +88,18 @@ export const registerUser = async (req: Request, res: Response) => {
         });
 
         if (user) {
-            // Send admin notification (Placeholder for future implementation)
-            // sendAdminNotification(user); 
+            // Send admin notification
+            const admins = await User.find({ role: UserRole.ADMIN });
+            const notifications = admins.map(admin => ({
+                user: admin._id,
+                type: 'info',
+                title: 'New Voter Registration',
+                message: `${user.name} (${user.studentId}) has registered and is pending verification.`
+            }));
+
+            if (notifications.length > 0) {
+                await Notification.insertMany(notifications);
+            }
 
             await sendTokenResponse(user, 201, res);
         } else {
@@ -104,7 +115,7 @@ export const registerUser = async (req: Request, res: Response) => {
 // @access  Public
 export const loginUser = async (req: Request, res: Response) => {
     try {
-        const { email, studentId, password } = req.body;
+        const { email, studentId, password, faceDescriptor } = req.body;
 
         // Construct query based on what was provided
         const query = email ? { email } : { studentId };
@@ -131,6 +142,51 @@ export const loginUser = async (req: Request, res: Response) => {
         }
 
         if (await bcrypt.compare(password, user.password as string)) {
+            // Credentials Matched. Now check for Biometrics if Voter.
+
+            if (user.role === UserRole.VOTER) {
+                // 1. Check if Face Data is present from registration
+                if (!user.imageHash) {
+                    // This is an edge case: Voter exists but has no face data.
+                    // Ideally should not happen if rgistration enforces it.
+                    // We allow login but maybe warn? Or blocking? 
+                    // Let's allow for now to prevent lockout of legacy users, or BLOCK if strict.
+                    // STRICT MODE:
+                    // res.status(403).json({ message: 'Account incomplete. No face data found. Contact verification support.' });
+                    // return;
+                } else {
+                    // 2. Check if faceDescriptor provided in request
+                    if (!faceDescriptor) {
+                        // Client needs to prompt for face
+                        // Return 428 Precondition Required
+                        res.status(428).json({
+                            message: 'Face verification required',
+                            required: 'face_descriptor'
+                        });
+                        return;
+                    }
+
+                    // 3. Verify Face
+                    try {
+                        const registeredDescriptor = JSON.parse(user.imageHash);
+                        const distance = euclideanDistance(faceDescriptor, registeredDescriptor);
+                        const THRESHOLD = 0.55;
+
+                        if (distance > THRESHOLD) {
+                            // Failed Face Check
+                            console.log(`Login Failed: Face distance ${distance} > ${THRESHOLD}`);
+                            res.status(401).json({ message: 'Face not recognized. Login failed.' });
+                            return;
+                        }
+                        // Success -> Continue to token issuance
+                    } catch (err) {
+                        console.error("Login Face Verify Error:", err);
+                        res.status(500).json({ message: 'Error verifying biometric data' });
+                        return;
+                    }
+                }
+            }
+
             // Success: Reset attempts
             user.loginAttempts = 0;
             user.lockUntil = undefined;
@@ -276,6 +332,77 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
         } else {
             res.status(401).json({ message: 'Invalid current password' });
         }
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const euclideanDistance = (desc1: number[], desc2: number[]): number => {
+    if (desc1.length !== desc2.length) return 1.0; // Max distance
+    let sum = 0;
+    for (let i = 0; i < desc1.length; i++) {
+        const diff = desc1[i] - desc2[i];
+        sum += diff * diff;
+    }
+    return Math.sqrt(sum);
+};
+
+// @desc    Verify user face
+// @route   POST /api/auth/verify-face
+// @access  Private
+export const verifyFace = async (req: AuthRequest, res: Response) => {
+    try {
+        const { faceDescriptor } = req.body;
+        console.log("VerifyRequest: User ID:", req.user?._id);
+
+        if (!faceDescriptor || !Array.isArray(faceDescriptor)) {
+            res.status(400).json({ message: 'Valid face descriptor is required' });
+            return;
+        }
+
+        const user = await User.findById(req.user?._id);
+
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+
+        if (user.verificationStatus === VerificationStatus.VERIFIED) {
+            res.status(200).json({ message: 'User is already verified', verified: true });
+            return;
+        }
+
+        if (!user.imageHash) {
+            console.log("VerifyRequest: No imageHash found for user");
+            res.status(400).json({ message: 'No registered face data found for this user.' });
+            return;
+        }
+
+        let registeredDescriptor: number[];
+        try {
+            registeredDescriptor = JSON.parse(user.imageHash);
+        } catch (e) {
+            res.status(500).json({ message: 'Error parsing registered face data' });
+            return;
+        }
+
+        const distance = euclideanDistance(faceDescriptor, registeredDescriptor);
+        console.log(`VerifyRequest: Distance=${distance}`);
+        // Adjusted threshold to 0.45 for TinyFaceDetector (faster but slightly less accurate)
+        const THRESHOLD = 0.45;
+
+        if (distance < THRESHOLD) {
+            user.verificationStatus = VerificationStatus.VERIFIED;
+            await user.save();
+            res.json({ message: 'Face verified successfully', verified: true, distance });
+        } else {
+            res.status(400).json({
+                message: 'Face verification failed. Data does not match.',
+                verified: false,
+                distance
+            });
+        }
+
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

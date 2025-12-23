@@ -10,6 +10,7 @@ const PublicResults = () => {
   const [resultsData, setResultsData] = useState<any[]>([]);
   const [totalVotes, setTotalVotes] = useState(0);
   const [winner, setWinner] = useState<any>(null);
+  const [isTie, setIsTie] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [publishedAt, setPublishedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -21,6 +22,7 @@ const PublicResults = () => {
         setResultsData(data.results);
         setTotalVotes(data.totalVotes);
         setWinner(data.winner);
+        setIsTie(data.isTie);
         setIsPublished(true);
         setPublishedAt(data.publishedAt);
       } catch (error) {
@@ -50,10 +52,7 @@ const PublicResults = () => {
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                 <Vote className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-xl text-foreground">CampusVote</span>
-            </Link>
-            <Link to="/login">
-              <Button variant="hero" size="sm">Sign In</Button>
+              <span className="font-bold text-xl text-foreground">Let's Vote</span>
             </Link>
           </div>
         </header>
@@ -85,10 +84,7 @@ const PublicResults = () => {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Vote className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">CampusVote</span>
-          </Link>
-          <Link to="/login">
-            <Button variant="hero" size="sm">Sign In</Button>
+            <span className="font-bold text-xl text-foreground">Let's Vote</span>
           </Link>
         </div>
       </header>
@@ -117,19 +113,28 @@ const PublicResults = () => {
           </div>
 
           {/* Winner Card */}
-          <Card className="border-2 border-accent-coral/30 bg-gradient-to-br from-accent-coral-light to-card">
+          {/* Winner Card */}
+          <Card className={`border-2 ${winner ? 'border-accent-coral/30 bg-gradient-to-br from-accent-coral-light to-card' : 'border-muted bg-card'}`}>
             <CardContent className="py-8">
               <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-accent-coral flex items-center justify-center">
-                  <Trophy className="w-12 h-12 text-primary-foreground" />
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center ${winner ? 'bg-accent-coral' : 'bg-muted'}`}>
+                  <Trophy className={`w-12 h-12 ${winner ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
                 </div>
                 <div className="text-center md:text-left">
-                  <p className="text-sm font-medium text-accent-coral mb-2">Winner</p>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">{winner.name}</h2>
-                  <p className="text-primary font-medium">{winner.party}</p>
-                  <p className="text-muted-foreground mt-2">
-                    {winner.votes} votes ({((winner.votes / totalVotes) * 100).toFixed(1)}%)
+                  <p className={`text-sm font-medium mb-2 ${winner ? 'text-accent-coral' : 'text-muted-foreground'}`}>
+                    {winner ? 'Winner' : 'Election Status'}
                   </p>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                    {winner ? winner.name : (totalVotes === 0 ? "No Votes Cast" : (isTie ? "It's a Tie!" : "No Verified Winner"))}
+                  </h2>
+                  <p className="text-primary font-medium">
+                    {winner ? winner.party : (totalVotes === 0 ? "Waiting for votes..." : (isTie ? "Multiple candidates tied for first place" : ""))}
+                  </p>
+                  {winner && (
+                    <p className="text-muted-foreground mt-2">
+                      {winner.votes} votes ({totalVotes > 0 ? ((winner.votes / totalVotes) * 100).toFixed(1) : 0}%)
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -147,21 +152,23 @@ const PublicResults = () => {
             <Card>
               <CardContent className="py-6 text-center">
                 <TrendingUp className="w-8 h-8 text-accent-coral mx-auto mb-2" />
-                <p className="text-2xl font-bold">{((winner.votes / totalVotes) * 100).toFixed(1)}%</p>
-                <p className="text-sm text-muted-foreground">Winner Share</p>
+                <p className="text-2xl font-bold">
+                  {winner ? (totalVotes > 0 ? ((winner.votes / totalVotes) * 100).toFixed(1) : 0) : (totalVotes > 0 && resultsData.length > 0 ? ((resultsData[0].votes / totalVotes) * 100).toFixed(1) : 0)}%
+                </p>
+                <p className="text-sm text-muted-foreground">{winner ? 'Winner Share' : 'Top Share'}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="py-6 text-center">
                 <Vote className="w-8 h-8 text-accent-purple mx-auto mb-2" />
-                <p className="text-2xl font-bold">{resultsData.length - 1}</p>
+                <p className="text-2xl font-bold">{resultsData.length}</p>
                 <p className="text-sm text-muted-foreground">Candidates</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="py-6 text-center">
                 <BarChart3 className="w-8 h-8 text-accent-pink mx-auto mb-2" />
-                <p className="text-2xl font-bold">{resultsData.find(r => r.name === 'Abstain')?.votes || 0}</p>
+                <p className="text-2xl font-bold">{resultsData.find((r: any) => r.name === 'Abstain')?.votes || 0}</p>
                 <p className="text-sm text-muted-foreground">Abstentions</p>
               </CardContent>
             </Card>
@@ -311,7 +318,7 @@ const PublicResults = () => {
       <footer className="py-12 bg-card border-t border-border">
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground text-sm">
-            ©2025 CampusVote. Secure elections for modern campuses.
+            ©2025 Let's Vote. Secure elections for modern campuses.
           </p>
         </div>
       </footer>

@@ -148,17 +148,14 @@ const VotePage = () => {
 
     try {
       if (isAbstaining) {
-        // Backend might support "abstain" as a special candidate or flag
-        // For now, let's treat it as skipping the logic or sending specific ID if required
-        // BUT, current backend doesn't support abstain logic in `castVote` (it requires candidateId).
-        // I will assume for MVP we only support voting for candidates.
-        toast({ title: "Abstention not supported fully yet", variant: "destructive" });
-        setIsSubmitting(false);
-        return;
+        // Backend supports "abstain" as a special candidate
+        // Proceed to submit
       }
 
       // Real API Call
-      await api.post('/vote', { candidateId: selectedCandidate?._id || selectedCandidate?.id });
+      // If abstaining, send 'abstain' as candidateId
+      const payload = isAbstaining ? { candidateId: 'abstain' } : { candidateId: selectedCandidate?._id || selectedCandidate?.id };
+      await api.post('/vote', payload);
 
       const receipt = {
         voteId: `VOTE-${Date.now()}`,

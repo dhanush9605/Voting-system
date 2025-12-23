@@ -21,8 +21,11 @@ const files = [
     'tiny_face_detector_model-shard1'
 ];
 
+// Force download to ensure fresh models
 if (!fs.existsSync(MODELS_DIR)) {
     fs.mkdirSync(MODELS_DIR, { recursive: true });
+} else {
+    console.log('Models directory exists. Overwriting to ensure integrity...');
 }
 
 const downloadFile = (file) => {

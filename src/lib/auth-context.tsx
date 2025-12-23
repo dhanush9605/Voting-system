@@ -3,8 +3,8 @@ import { User, UserRole, AuthState } from '@/types';
 import api from './api';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
-  loginWithStudentId: (studentId: string, password: string) => Promise<void>;
+  login: (email: string, password: string, role: UserRole, faceDescriptor?: number[]) => Promise<void>;
+  loginWithStudentId: (studentId: string, password: string, faceDescriptor?: number[]) => Promise<void>;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
 }
@@ -42,9 +42,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  const login = useCallback(async (email: string, password: string, role: UserRole) => {
+  const login = useCallback(async (email: string, password: string, role: UserRole, faceDescriptor?: number[]) => {
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', { email, password, faceDescriptor });
 
       if (data.role !== role && role !== 'admin') { // Admin can login anywhere usually, or restrict
         // For strict role checking:
@@ -61,14 +61,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
-      throw new Error(message);
+      // Pass the full error object so components can check for status codes (e.g. 428)
+      throw error;
     }
   }, []);
 
-  const loginWithStudentId = useCallback(async (studentId: string, password: string) => {
+  const loginWithStudentId = useCallback(async (studentId: string, password: string, faceDescriptor?: number[]) => {
     try {
-      const { data } = await api.post('/auth/login', { studentId, password });
+      const { data } = await api.post('/auth/login', { studentId, password, faceDescriptor });
 
       setState({
         user: data,
@@ -77,8 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
       });
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
-      throw new Error(message);
+      throw error;
     }
   }, []);
 

@@ -18,7 +18,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 app.use(cors({
-    origin: ['http://localhost:8080', 'http://localhost:5173'], // Allow both ports
+    origin: true, // Allow all origins for local testing
     credentials: true
 }));
 app.use(express.json());

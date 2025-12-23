@@ -79,6 +79,16 @@ const VoterDashboard = () => {
                   </Button>
                 </Link>
               )}
+              {/* Add Verification Link if NOT verified */}
+              {!isVerified && (
+                <Link to="/verify-face" className="inline-block mt-4">
+                  <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Verify Identity
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </CardContent>

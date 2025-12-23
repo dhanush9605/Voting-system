@@ -1,24 +1,16 @@
 import { useState, useEffect } from "react";
-import { Settings, User, Lock, Eye, EyeOff, Save, Check } from "lucide-react";
+import { Lock, Eye, EyeOff, Check, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth-context";
-import { SITE_NAME } from "@/lib/site-config";
-import { format } from "date-fns";
 import api from "@/lib/api";
 import { ElectionConfig } from "@/types";
-import { Calendar } from "lucide-react";
 
 const AdminSettings = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
-
-  // Site settings
-  const [siteName, setSiteName] = useState<string>(SITE_NAME);
-  const [isSavingSite, setIsSavingSite] = useState(false);
 
   // Password change
   const [oldPassword, setOldPassword] = useState('');
@@ -46,9 +38,6 @@ const AdminSettings = () => {
     try {
       const { data } = await api.get('/admin/election');
       if (data) {
-        // Format dates for input type="datetime-local" if needed, 
-        // or just keep ISO strings if using date picker.
-        // The standard datetime-local input needs "YYYY-MM-DDThh:mm" format
         const formatDateForInput = (dateString: string) => {
           if (!dateString) return '';
           return new Date(dateString).toISOString().slice(0, 16);
@@ -102,47 +91,11 @@ const AdminSettings = () => {
     }
   };
 
-  // Validation errors
-  const [siteNameError, setSiteNameError] = useState('');
   const [passwordErrors, setPasswordErrors] = useState<{
     oldPassword?: string;
     newPassword?: string;
     confirmPassword?: string;
   }>({});
-
-  const handleSaveSiteName = async () => {
-    setSiteNameError('');
-
-    if (!siteName.trim()) {
-      setSiteNameError('Site name is required');
-      return;
-    }
-
-    if (siteName.trim().length < 2) {
-      setSiteNameError('Site name must be at least 2 characters');
-      return;
-    }
-
-    setIsSavingSite(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      toast({
-        title: "Settings saved",
-        description: "Site name has been updated successfully.",
-      });
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to save settings. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingSite(false);
-    }
-  };
 
   const validatePassword = () => {
     const errors: typeof passwordErrors = {};
@@ -196,6 +149,72 @@ const AdminSettings = () => {
       });
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  // Emergency Stop
+  const [isStopDialogOpen, setIsStopDialogOpen] = useState(false);
+  const [stopPassword, setStopPassword] = useState("");
+  const [isStopping, setIsStopping] = useState(false);
+
+  const handleEmergencyStop = async () => {
+    if (!stopPassword) {
+      toast({ title: "Password Required", description: "Please enter your admin password.", variant: "destructive" });
+      return;
+    }
+
+    setIsStopping(true);
+    try {
+      await api.post('/admin/election/stop', { password: stopPassword });
+      toast({
+        title: "Election Stopped",
+        description: "The election has been immediately stopped."
+      });
+      setIsStopDialogOpen(false);
+      setStopPassword("");
+      // Refresh config
+      fetchElectionConfig();
+    } catch (error: any) {
+      toast({
+        title: "Failed to Stop",
+        description: error.response?.data?.message || "Invalid password or server error",
+        variant: "destructive"
+      });
+    } finally {
+      setIsStopping(false);
+    }
+  };
+
+  // Reset Election
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleResetElection = async () => {
+    if (!resetPassword) {
+      toast({ title: "Password Required", description: "Please enter your admin password.", variant: "destructive" });
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await api.post('/admin/election/reset', { password: resetPassword });
+      toast({
+        title: "Election Data Reset",
+        description: "All votes and candidate counts have been cleared."
+      });
+      setIsResetDialogOpen(false);
+      setResetPassword("");
+      // Refresh config
+      fetchElectionConfig();
+    } catch (error: any) {
+      toast({
+        title: "Failed to Reset",
+        description: error.response?.data?.message || "Invalid password or server error",
+        variant: "destructive"
+      });
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -268,89 +287,6 @@ const AdminSettings = () => {
             >
               {isSavingElection ? 'Saving...' : 'Update Election Info'}
             </Button>
-          </CardContent>
-        </Card>
-        {/* Site Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Settings className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Site Settings</CardTitle>
-                <CardDescription>Customize the site display name</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="siteName">Site Display Name</Label>
-              <Input
-                id="siteName"
-                value={siteName}
-                onChange={(e) => {
-                  setSiteName(e.target.value);
-                  setSiteNameError('');
-                }}
-                placeholder="Enter site name"
-              />
-              {siteNameError && (
-                <p className="text-sm text-destructive">{siteNameError}</p>
-              )}
-            </div>
-
-            <Button
-              onClick={handleSaveSiteName}
-              disabled={isSavingSite}
-              className="w-full sm:w-auto"
-            >
-              {isSavingSite ? (
-                <>Saving...</>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Admin Account */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-                <User className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <CardTitle>Admin Account</CardTitle>
-                <CardDescription>Your account information</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Name</Label>
-              <div className="p-3 bg-muted/50 rounded-lg text-foreground">
-                {user?.name || 'Admin User'}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <div className="p-3 bg-muted/50 rounded-lg text-foreground">
-                {user?.email || 'admin@verification.com'}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <div className="p-3 bg-muted/50 rounded-lg text-foreground capitalize">
-                {user?.role || 'Admin'}
-              </div>
-            </div>
           </CardContent>
         </Card>
 
@@ -466,6 +402,110 @@ const AdminSettings = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Danger Zone */}
+        <Card className="lg:col-span-2 border-destructive/20 bg-destructive/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                <CardDescription>Irreversible actions requiring password confirmation</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-background/50">
+              <div>
+                <h4 className="font-semibold text-foreground">Emergency Stop Election</h4>
+                <p className="text-sm text-muted-foreground">Immediately ends the election. Voters will no longer be able to cast votes.</p>
+              </div>
+              <Button variant="destructive" onClick={() => setIsStopDialogOpen(true)}>
+                Stop Election
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between p-4 border border-destructive/20 rounded-lg bg-background/50">
+              <div>
+                <h4 className="font-semibold text-foreground">Reset Election Data</h4>
+                <p className="text-sm text-muted-foreground">Clears ALL votes, candidates' counts, and resets voter status to 'not voted'.</p>
+              </div>
+              <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={() => setIsResetDialogOpen(true)}>
+                Reset Data
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stop Confirmation Dialog */}
+        <Dialog open={isStopDialogOpen} onOpenChange={setIsStopDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-destructive">Emergency Stop Election</DialogTitle>
+              <DialogDescription>
+                This action will <strong>IMMEDIATELY</strong> end the current election.
+                Please enter your admin password to confirm.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Admin Password</Label>
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={stopPassword}
+                  onChange={(e) => setStopPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsStopDialogOpen(false)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                onClick={handleEmergencyStop}
+                disabled={isStopping}
+              >
+                {isStopping ? "Stopping..." : "CONFIRM STOP"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Confirmation Dialog */}
+        <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-destructive">Reset Election Data</DialogTitle>
+              <DialogDescription>
+                This action will <strong>PERMANENTLY DELETE</strong> all voting records. Candidates' vote counts will be zeroed out.
+                Use this only when starting a fresh election.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Admin Password</Label>
+                <Input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsResetDialogOpen(false)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                onClick={handleResetElection}
+                disabled={isResetting}
+              >
+                {isResetting ? "Resetting..." : "CONFIRM RESET"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

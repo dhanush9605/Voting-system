@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware'; // Ensure this is exported
 import User, { VerificationStatus } from '../models/User';
+import Election from '../models/Election';
 
 import { UserRole } from '../models/User';
+import Notification from '../models/Notification';
 import Candidate from '../models/Candidate';
 
 // @desc    Get all voters
@@ -43,6 +45,16 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
 
         user.verificationStatus = status;
         await user.save();
+
+        // Create Notification
+        await Notification.create({
+            user: user._id,
+            type: status === VerificationStatus.VERIFIED ? 'success' : 'error',
+            title: status === VerificationStatus.VERIFIED ? 'Verification Approved' : 'Verification Rejected',
+            message: status === VerificationStatus.VERIFIED
+                ? 'Your account has been verified. You can now vote.'
+                : 'Your verification was rejected. Please contact admin or try again.'
+        });
 
         res.json({
             message: `User ${status === VerificationStatus.VERIFIED ? 'verified' : 'rejected'} successfully`,
@@ -95,8 +107,10 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
         const totalRegistered = await User.countDocuments({ role: UserRole.VOTER });
         const verifiedVoters = await User.countDocuments({ role: UserRole.VOTER, verificationStatus: VerificationStatus.VERIFIED });
         const candidatesCount = await Candidate.countDocuments();
+        const election = await Election.findOne();
+        const abstainCount = election?.abstainCount || 0;
 
-        // Sum total votes from candidates
+        // Sum total votes from candidates + abstains
         // Count users who have actually voted (Source of Truth for "Votes Cast")
         const votesCast = await User.countDocuments({ role: UserRole.VOTER, hasVoted: true });
 

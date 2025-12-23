@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '') + '/api';
+const API_URL = '/api';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -13,7 +13,7 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // Handle 401 (Unauthorized) - Refresh Token Flow
-        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh')) {
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh') && !originalRequest.url?.includes('/auth/login')) {
             originalRequest._retry = true;
 
             try {

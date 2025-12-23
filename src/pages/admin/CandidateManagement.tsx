@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Search, Trash2, Edit, Save, X, Upload } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Save, X, Upload, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -133,6 +133,27 @@ const CandidateManagement = () => {
     }
   };
 
+  const exportCSV = () => {
+    const csvContent = [
+      ["Name", "Party", "Manifesto", "Vote Count"].join(","),
+      ...candidates.map(c => [
+        `"${c.name}"`,
+        `"${c.party || ""}"`,
+        `"${(c.manifesto || "").replace(/"/g, '""')}"`, // Escape quotes
+        c.voteCount || 0
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "candidates.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "Candidates exported successfully" });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -140,10 +161,16 @@ const CandidateManagement = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Candidate Management</h1>
           <p className="text-muted-foreground mt-1">Manage election candidates</p>
         </div>
-        <Button onClick={() => handleOpenDialog()} variant="hero">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Candidate
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+          <Button onClick={() => handleOpenDialog()} variant="hero">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Candidate
+          </Button>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

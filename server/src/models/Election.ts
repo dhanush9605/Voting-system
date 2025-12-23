@@ -29,6 +29,10 @@ const electionSchema = new mongoose.Schema({
     },
     publishedAt: {
         type: Date
+    },
+    abstainCount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

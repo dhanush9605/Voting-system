@@ -25,6 +25,7 @@ import ResultsManagement from "./pages/admin/ResultsManagement";
 // Voter pages
 import VoterDashboard from "./pages/voter/VoterDashboard";
 import VotePage from "./pages/voter/VotePage";
+import FaceVerification from "./pages/FaceVerification";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,7 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/results/public" element={<PublicResults />} />
-            
+
             {/* Auth routes */}
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />
@@ -69,6 +70,7 @@ const App = () => (
               <Route path="/voter/dashboard" element={<VoterDashboard />} />
               <Route path="/voter/profile" element={<VoterDashboard />} />
               <Route path="/vote" element={<VotePage />} />
+              <Route path="/verify-face" element={<FaceVerification />} />
             </Route>
 
             {/* Catch-all */}

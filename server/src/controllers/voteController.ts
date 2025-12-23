@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import User, { VerificationStatus } from '../models/User';
 import Candidate from '../models/Candidate';
+import Election from '../models/Election';
 import { AuthRequest } from '../middleware/authMiddleware';
 
 // @desc    Cast a vote
@@ -46,19 +47,22 @@ export const castVote = async (req: AuthRequest, res: Response) => {
             return;
         }
 
-        // 2. Fetch Candidate
-        const candidate = await Candidate.findById(candidateId).session(session);
-        if (!candidate) {
-            await session.abortTransaction();
-            session.endSession();
-            res.status(404).json({ message: 'Candidate not found' });
-            return;
-        }
+        // 2. Fetch Candidate or Check Abstain
+        if (candidateId === 'abstain') {
+            await Election.findOneAndUpdate({}, { $inc: { abstainCount: 1 } }, { session });
+        } else {
+            const candidate = await Candidate.findById(candidateId).session(session);
+            if (!candidate) {
+                await session.abortTransaction();
+                session.endSession();
+                res.status(404).json({ message: 'Candidate not found' });
+                return;
+            }
 
-        // 3. Record Vote (Atomic operations)
-        // Increment candidate vote count
-        candidate.voteCount += 1;
-        await candidate.save({ session });
+            // 3. Record Vote (Atomic operations)
+            // Increment candidate vote count atomically to prevent race conditions
+            await Candidate.findByIdAndUpdate(candidateId, { $inc: { voteCount: 1 } }, { session });
+        }
 
         // Mark user as having voted
         user.hasVoted = true;

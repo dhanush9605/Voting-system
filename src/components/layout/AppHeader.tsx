@@ -2,12 +2,17 @@ import { useNavigate } from "react-router-dom";
 import { Search, Bell, Globe, User, ChevronDown, Settings, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import api from "@/lib/api";
+import { formatDistanceToNow } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 
 export function AppHeader() {
@@ -40,16 +45,9 @@ export function AppHeader() {
       {/* Right section */}
       <div className="flex items-center gap-3">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5 text-muted-foreground" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-accent-coral rounded-full" />
-        </Button>
+        <NotificationsMenu />
 
-        {/* Language */}
-        <Button variant="ghost" size="sm" className="hidden sm:flex gap-2 text-muted-foreground">
-          <Globe className="w-4 h-4" />
-          <span>EN</span>
-        </Button>
+
 
         {/* User dropdown with arrow icon */}
         <DropdownMenu>
@@ -70,7 +68,7 @@ export function AppHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-popover border border-border shadow-elevated z-50">
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="cursor-pointer"
               onClick={() => handleNavigate(user?.role === 'admin' ? '/admin/dashboard' : '/voter/profile')}
             >
@@ -78,7 +76,7 @@ export function AppHeader() {
               Profile
             </DropdownMenuItem>
             {user?.role === 'admin' && (
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="cursor-pointer"
                 onClick={() => handleNavigate('/admin/settings')}
               >
@@ -87,7 +85,7 @@ export function AppHeader() {
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="cursor-pointer text-destructive focus:text-destructive"
               onClick={handleLogout}
             >
@@ -98,5 +96,104 @@ export function AppHeader() {
         </DropdownMenu>
       </div>
     </header>
+  );
+}
+
+function NotificationsMenu() {
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const { data } = await api.get('/auth/notifications');
+      setNotifications(data);
+      setUnreadCount(data.filter((n: any) => !n.isRead).length);
+    } catch (error) {
+      console.error("Failed to fetch notifications", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications();
+    }
+    // Initial fetch
+    fetchNotifications();
+
+    // Poll every 60 seconds
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await api.put(`/auth/notifications/${id}/read`);
+      // Update local state to reflect read status instantly
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to mark as read", error);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.put('/auth/notifications/read-all');
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error("Failed to mark all read", error);
+    }
+  };
+
+  return (
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="w-5 h-5 text-muted-foreground" />
+          {unreadCount > 0 && (
+            <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full border border-card" />
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 p-0">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h4 className="font-semibold">Notifications</h4>
+          {unreadCount > 0 && (
+            <Button variant="ghost" size="sm" className="text-xs h-auto py-1 text-primary hover:text-primary/80" onClick={handleMarkAllRead}>
+              Mark all read
+            </Button>
+          )}
+        </div>
+        <div className="max-h-[300px] overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground text-sm">
+              No notifications
+            </div>
+          ) : (
+            notifications.map((notification) => (
+              <div
+                key={notification._id}
+                className={`p-4 border-b last:border-0 hover:bg-muted/50 transition-colors cursor-pointer ${notification.isRead ? 'opacity-60' : 'bg-accent/5'}`}
+                onClick={() => !notification.isRead && handleMarkAsRead(notification._id)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-2 h-2 mt-2 rounded-full flex-shrink-0 ${notification.type === 'success' ? 'bg-green-500' :
+                    notification.type === 'error' ? 'bg-red-500' :
+                      'bg-blue-500'
+                    }`} />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">{notification.title}</p>
+                    <p className="text-sm text-muted-foreground">{notification.message}</p>
+                    <p className="text-xs text-muted-foreground/60">{formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

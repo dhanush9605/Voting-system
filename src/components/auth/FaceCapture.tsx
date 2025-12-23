@@ -3,7 +3,7 @@ import Webcam from 'react-webcam';
 import * as faceapi from 'face-api.js';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Camera, CheckCircle2, AlertCircle, VideoOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FaceCaptureProps {
@@ -14,6 +14,9 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
     const webcamRef = useRef<Webcam>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [modelLoaded, setModelLoaded] = useState(false);
+    const [cameraReady, setCameraReady] = useState(false);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+
     // Added 'straighten' state for post-verification capture prep
     const [detectionState, setDetectionState] = useState<'loading' | 'position' | 'blink' | 'straighten' | 'success' | 'failed'>('loading');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
             try {
                 const MODEL_URL = '/models';
                 console.log('Loading face-api models...');
-                // Use TinyFaceDetector for better performance on client devices
+                // Reverting to TinyFaceDetector for speed (User reported SSD was too slow)
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -53,7 +56,6 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                 ]);
                 console.log('Models loaded successfully');
                 setModelLoaded(true);
-                setDetectionState('position');
             } catch (err) {
                 console.error('Failed to load models:', err);
                 setErrorMessage('Failed to load face detection models. Please refresh.');
@@ -77,13 +79,13 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
         return angle;
     };
 
-    const handleVideoOnPlay = useCallback(() => {
+    const startDetection = useCallback(() => {
         // Detection loop
         let intervalId: NodeJS.Timeout;
 
         const detect = async () => {
             if (!webcamRef.current || !webcamRef.current.video || !canvasRef.current || processingRef.current) return;
-            if (detectionState === 'success') return;
+            if (detectionState === 'success' || detectionState === 'failed') return;
 
             const video = webcamRef.current.video;
 
@@ -94,8 +96,7 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
             faceapi.matchDimensions(canvasRef.current, displaySize);
 
             try {
-                // Use detectSingleFace with TinyFaceDetectorOptions for speed
-                // inputSize: 224, 320, 416, 512, 608 (smaller = faster, less accurate)
+                // Revert to TinyFaceDetectorOptions for speed
                 const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
 
                 const detection = await faceapi.detectSingleFace(video, options)
@@ -107,6 +108,11 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                 if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
                 if (detection) {
+                    // Update state to position if properly detected for the first time
+                    if (detectionState === 'loading') {
+                        setDetectionState('position');
+                    }
+
                     const resizedDetection = faceapi.resizeResults(detection, displaySize);
 
                     const face = resizedDetection;
@@ -186,6 +192,14 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
 
     }, [detectionState]);
 
+    useEffect(() => {
+        // Start detection when model is loaded and camera is ready
+        if (modelLoaded && cameraReady) {
+            const cleanup = startDetection();
+            return cleanup;
+        }
+    }, [modelLoaded, cameraReady, startDetection]);
+
     const handleCapture = (descriptor: Float32Array) => {
         if (!webcamRef.current) return;
         processingRef.current = true;
@@ -203,10 +217,26 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
     return (
         <Card className="w-full max-w-md mx-auto overflow-hidden border-2 border-primary/20 bg-card">
             <div className="relative aspect-video bg-black rounded-lg overflow-hidden m-4 mb-0">
-                {!modelLoaded && (
+                {!modelLoaded && !cameraError && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-20">
                         <Loader2 className="w-8 h-8 animate-spin mb-2" />
                         <p className="text-sm">Loading AI Models...</p>
+                    </div>
+                )}
+
+                {cameraError && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-destructive z-30 p-4 text-center">
+                        <VideoOff className="w-12 h-12 mb-2" />
+                        <p className="font-bold mb-1">Camera Error</p>
+                        <p className="text-sm">{cameraError}</p>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="mt-4"
+                            onClick={() => window.location.reload()}
+                        >
+                            Reload Page
+                        </Button>
                     </div>
                 )}
 
@@ -229,12 +259,19 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                         width: 640,
                         height: 480
                     }}
-                    onUserMedia={() => { /* camera ready */ }}
+                    onUserMedia={() => {
+                        console.log("Camera started successfully");
+                        setCameraReady(true);
+                    }}
+                    onUserMediaError={(err) => {
+                        console.error("Camera failed to start:", err);
+                        setCameraError("Could not access camera. Please allow permissions.");
+                    }}
                 />
 
                 <canvas
                     ref={canvasRef}
-                    className="absolute inset-0 w-full h-full transform scale-x-[-1 pointer-events-none"
+                    className="absolute inset-0 w-full h-full transform scale-x-[-1] pointer-events-none"
                 />
 
                 {/* Failure Overlay */}
@@ -256,7 +293,7 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                 )}
 
                 {/* Overlay Instructions */}
-                {detectionState !== 'loading' && detectionState !== 'success' && detectionState !== 'failed' && (
+                {detectionState !== 'loading' && detectionState !== 'success' && detectionState !== 'failed' && !cameraError && (
                     <div className="absolute bottom-4 left-0 right-0 text-center z-10 flex flex-col items-center">
                         <div className={cn(
                             "inline-block px-4 py-2 rounded-full text-white backdrop-blur-sm shadow-lg transition-all duration-300 mb-2",
@@ -304,7 +341,7 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                         <div className="p-2 rounded-full bg-green-100 text-green-600">
                             <CheckCircle2 className="w-6 h-6" />
                         </div>
-                    ) : detectionState === 'failed' ? (
+                    ) : detectionState === 'failed' || cameraError ? (
                         <div className="p-2 rounded-full bg-red-100 text-red-600">
                             <AlertCircle className="w-6 h-6" />
                         </div>
@@ -318,39 +355,19 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                             {detectionState === 'success' ? 'Biometric Verified' : 'Live Verification'}
                         </h3>
                         <p className="text-sm text-muted-foreground mt-1">
-                            {detectionState === 'loading' && "Initializing secure camera..."}
-                            {detectionState === 'position' && "We need to verify you are a real person."}
-                            {detectionState === 'blink' && "Tilting head proves liveness (anti-spoofing)."}
-                            {detectionState === 'straighten' && "Great! Now look at the camera for your photo."}
-                            {detectionState === 'success' && "Your face biometric has been secured."}
-                            {detectionState === 'failed' && "No face detected or no blink. Please retry."}
+                            {cameraError ? "Camera access issue." :
+                                detectionState === 'loading' ? "Initializing secure camera..." :
+                                    detectionState === 'position' ? "We need to verify you are a real person." :
+                                        detectionState === 'blink' ? "Tilting head proves liveness (anti-spoofing)." :
+                                            detectionState === 'straighten' ? "Great! Now look at the camera for your photo." :
+                                                detectionState === 'success' ? "Your face biometric has been secured." :
+                                                    "No face detected or no blink. Please retry."}
                         </p>
                     </div>
                 </div>
             </div>
-
-            {/* Hidden trigger to start detection loop when video plays */}
-            {modelLoaded && (
-                <React.Fragment>
-                    {/* We attach the loop using an effect on the video element reference if possible, 
-               but safer to just use a transparent overlay or effect hook that checks readiness */}
-                    <DetectionStarter onReady={handleVideoOnPlay} isReady={!!webcamRef.current} />
-                </React.Fragment>
-            )}
         </Card>
     );
 };
-
-// Helper to start the loop cleanly
-const DetectionStarter = ({ onReady, isReady }: { onReady: () => void, isReady: boolean }) => {
-    useEffect(() => {
-        if (isReady) {
-            // Allow time for camera to maintain stream
-            const timer = setTimeout(onReady, 1000);
-            return () => clearTimeout(timer);
-        }
-    }, [isReady, onReady]);
-    return null;
-}
 
 export default FaceCapture;

@@ -11,9 +11,11 @@ router.get('/dashboard', protect, admin, getDashboardStats);
 router.get('/results', protect, admin, getElectionResults);
 
 // Election Info Management
-import { getElectionConfig, updateElectionConfig, togglePublishResults } from '../controllers/electionController';
+import { getElectionConfig, updateElectionConfig, togglePublishResults, emergencyStopElection, resetElection } from '../controllers/electionController';
 router.get('/election', protect, admin, getElectionConfig);
 router.put('/election', protect, admin, updateElectionConfig);
 router.put('/election/publish', protect, admin, togglePublishResults);
+router.post('/election/stop', protect, admin, emergencyStopElection);
+router.post('/election/reset', protect, admin, resetElection);
 
 export default router;
