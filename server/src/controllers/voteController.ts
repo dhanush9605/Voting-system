@@ -72,6 +72,28 @@ export const castVote = async (req: AuthRequest, res: Response) => {
         await session.commitTransaction();
         session.endSession();
 
+        // --- BLOCKCHAIN INTEGRATION ---
+        // We do this AFTER the DB transaction ensures the user is valid and hasn't voted.
+        if (candidateId !== 'abstain') {
+            try {
+                const { contract } = await import('../config/blockchain');
+                if (contract) {
+                    console.log(`🔗 Submitting vote for ${candidateId} to blockchain...`);
+                    // Call the smart contract
+                    // Note: This sends a real transaction and pays gas.
+                    const tx = await contract.vote(candidateId);
+                    console.log(`✅ Vote submitted! Tx Hash: ${tx.hash}`);
+
+                    // Optional: Wait for confirmation (slower response, but guaranteed)
+                    // await tx.wait(); 
+                }
+            } catch (bcError) {
+                console.error("⚠️ Blockchain sync failed:", bcError);
+                // Note: The vote is still valid in MongoDB. We just failed to mirror it.
+            }
+        }
+        // -----------------------------
+
         res.status(200).json({ message: 'Vote cast successfully' });
 
     } catch (error: any) {

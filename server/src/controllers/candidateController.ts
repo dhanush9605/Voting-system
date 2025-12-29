@@ -16,6 +16,20 @@ export const createCandidate = async (req: Request, res: Response) => {
         });
 
         res.status(201).json(candidate);
+
+        // --- BLOCKCHAIN INTEGRATION ---
+        try {
+            const { contract } = await import('../config/blockchain');
+            if (contract) {
+                console.log(`🔗 Adding candidate ${candidate.name} to blockchain...`);
+                // Note: mongoDB _id is an object, cast to string
+                const tx = await contract.addCandidate(candidate._id.toString(), candidate.name);
+                console.log(`✅ Candidate added to blockchain! Tx Hash: ${tx.hash}`);
+            }
+        } catch (bcError) {
+            console.error("⚠️ Blockchain sync failed (Add Candidate):", bcError);
+        }
+        // -----------------------------
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }
