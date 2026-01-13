@@ -219,7 +219,7 @@ const VoterManagement = () => {
                 className="pl-10"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {(["all", "pending", "verified", "rejected"] as FilterStatus[]).map((status) => (
                 <Button
                   key={status}
