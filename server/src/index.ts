@@ -28,6 +28,9 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Trust Proxy (Required for Secure Coookies on Render/Heroku)
+app.set('trust proxy', 1);
+
 
 
 

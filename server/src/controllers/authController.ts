@@ -41,15 +41,15 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
 
     res.cookie('jwt', accessToken, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax', // Relax for dev
+        secure: isProduction, // HTTPS required for None
+        sameSite: isProduction ? 'none' : 'lax', // Must be 'none' for cross-site
         maxAge: 15 * 60 * 1000 // 15 minutes
     });
 
     const refreshTokenOptions: any = {
         httpOnly: true,
         secure: isProduction,
-        sameSite: isProduction ? 'strict' : 'lax', // Relax for dev
+        sameSite: isProduction ? 'none' : 'lax',
         path: '/api/auth/refresh' // Restrict to refresh endpoint
     };
 
@@ -310,14 +310,14 @@ export const refreshToken = async (req: Request, res: Response) => {
         res.cookie('jwt', accessToken, {
             httpOnly: true,
             secure: isProduction,
-            sameSite: isProduction ? 'strict' : 'lax',
+            sameSite: isProduction ? 'none' : 'lax',
             maxAge: 15 * 60 * 1000 // 15 minutes
         });
 
         res.cookie('refresh_token', newRefreshToken, {
             httpOnly: true,
             secure: isProduction,
-            sameSite: isProduction ? 'strict' : 'lax',
+            sameSite: isProduction ? 'none' : 'lax',
             path: '/api/auth/refresh',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
