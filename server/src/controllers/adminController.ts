@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { UserRole } from '../models/User';
 import Notification from '../models/Notification';
 import Candidate from '../models/Candidate';
+import { sendEmail } from '../utils/email';
 
 // @desc    Get all voters
 // @route   GET /api/admin/voters
@@ -56,6 +57,31 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
             message: status === VerificationStatus.VERIFIED
                 ? 'Your account has been verified. You can now vote.'
                 : 'Your verification was rejected. Please contact admin or try again.'
+        });
+
+        // Send Email Notification
+        await sendEmail({
+            to: user.email,
+            subject: status === VerificationStatus.VERIFIED ? 'Voter Verification Approved' : 'Verification Status Update',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                    <h2 style="color: ${status === VerificationStatus.VERIFIED ? '#0F766E' : '#9f1239'};">
+                        ${status === VerificationStatus.VERIFIED ? 'Verification Approved! 🎉' : 'Verification Application Update'}
+                    </h2>
+                    <p>Hi ${user.name},</p>
+                    <p>
+                        ${status === VerificationStatus.VERIFIED
+                    ? 'Congratulations! Your voter account has been <strong>verified</strong> by the administration.'
+                    : 'We regret to inform you that your voter verification request has been <strong>rejected</strong>.'}
+                    </p>
+                    ${status === VerificationStatus.VERIFIED
+                    ? '<p>You are now eligible to cast your vote in the upcoming election.</p>'
+                    : '<p>Please contact the administration office for more details or to resubmit your application.</p>'
+                }
+                    <br>
+                    <p>Best regards,<br>Voting System Board</p>
+                </div>
+            `
         });
 
         res.json({

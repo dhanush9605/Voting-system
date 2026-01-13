@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import User, { IUser, UserRole, VerificationStatus } from '../models/User';
 import Notification from '../models/Notification';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { sendEmail } from '../utils/email';
 
 
 
@@ -161,6 +162,23 @@ export const registerUser = async (req: Request, res: Response) => {
             if (notifications.length > 0) {
                 await Notification.insertMany(notifications);
             }
+
+            // Send Welcome Email
+            await sendEmail({
+                to: user.email,
+                subject: 'Welcome to Voting System',
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                        <h2 style="color: #0F766E;">Welcome to Voting System!</h2>
+                        <p>Hi ${user.name},</p>
+                        <p>Thank you for registering. Your account has been created successfully.</p>
+                        <p><strong>Student ID:</strong> ${user.studentId}</p>
+                        <p>Your account is currently <strong>Pending Verification</strong>. You will receive another email once an admin reviews your details.</p>
+                        <br>
+                        <p>Best regards,<br>Voting System Team</p>
+                    </div>
+                `
+            });
 
             await sendTokenResponse(user, 201, res, false); // Registering = Default/No remember me or handle if needed
         } else {
