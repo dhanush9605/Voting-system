@@ -21,17 +21,22 @@ const CONTRACT_ABI = [
 let contract: ethers.Contract | null = null;
 let wallet: ethers.Wallet | null = null;
 
-if (RPC_URL && PRIVATE_KEY && CONTRACT_ADDRESS) {
+if (RPC_URL && PRIVATE_KEY) {
     try {
         const provider = new ethers.JsonRpcProvider(RPC_URL);
         wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-        contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
-        console.log("✅ Blockchain connected successfully");
+
+        if (CONTRACT_ADDRESS) {
+            contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+            console.log("✅ Blockchain connected successfully");
+        } else {
+            console.warn("⚠️ Blockchain wallet connected, but CONTRACT_ADDRESS is missing. Voting functions disabled.");
+        }
     } catch (error) {
         console.error("❌ Failed to connect to blockchain:", error);
     }
 } else {
-    console.warn("⚠️ Blockchain credentials missing in .env. Blockchain features will be disabled.");
+    console.warn("⚠️ Blockchain credentials (RPC_URL or PRIVATE_KEY) missing in .env. Blockchain features will be disabled.");
 }
 
 export { contract, wallet };
