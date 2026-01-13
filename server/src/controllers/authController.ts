@@ -37,7 +37,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
     user.refreshToken = refreshToken;
     await user.save();
 
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
 
     res.cookie('jwt', accessToken, {
         httpOnly: true,
@@ -305,7 +305,7 @@ export const refreshToken = async (req: Request, res: Response) => {
         user.refreshToken = newRefreshToken;
         await user.save();
 
-        const isProduction = process.env.NODE_ENV === 'production';
+        const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
 
         res.cookie('jwt', accessToken, {
             httpOnly: true,
