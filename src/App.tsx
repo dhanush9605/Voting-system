@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 // Public pages
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import AdminLogin from "./pages/admin/AdminLogin";
 import Register from "./pages/Register";
 import PublicResults from "./pages/PublicResults";
 import NotFound from "./pages/NotFound";
@@ -26,6 +27,7 @@ import ResultsManagement from "./pages/admin/ResultsManagement";
 import VoterDashboard from "./pages/voter/VoterDashboard";
 import VotePage from "./pages/voter/VotePage";
 import FaceVerification from "./pages/FaceVerification";
+import BlockchainVerification from "./pages/BlockchainVerification";
 
 const queryClient = new QueryClient();
 
@@ -40,10 +42,12 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<Landing />} />
             <Route path="/results/public" element={<PublicResults />} />
+            <Route path="/verify-vote" element={<BlockchainVerification />} />
 
             {/* Auth routes */}
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/register" element={<Register />} />
             </Route>
 

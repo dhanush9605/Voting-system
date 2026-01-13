@@ -9,6 +9,8 @@ router.post('/login', loginUser);
 router.post('/refresh', refreshToken);
 router.post('/logout', protect, logoutUser);
 router.get('/profile', protect, getUserProfile);
+router.put('/update-password', protect, updatePassword);
+router.post('/verify-face', protect, verifyFace);
 // Notification Routes
 import { getUserNotifications, markNotificationRead, markAllNotificationsRead } from '../controllers/notificationController';
 router.get('/notifications', protect, getUserNotifications);

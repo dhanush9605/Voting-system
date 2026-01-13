@@ -74,32 +74,114 @@ export const castVote = async (req: AuthRequest, res: Response) => {
 
         // --- BLOCKCHAIN INTEGRATION ---
         // We do this AFTER the DB transaction ensures the user is valid and hasn't voted.
+        let transactionHash: string | undefined;
+
         if (candidateId !== 'abstain') {
             try {
                 const { contract } = await import('../config/blockchain');
-                if (contract) {
-                    console.log(`🔗 Submitting vote for ${candidateId} to blockchain...`);
-                    // Call the smart contract
-                    // Note: This sends a real transaction and pays gas.
-                    const tx = await contract.vote(candidateId);
-                    console.log(`✅ Vote submitted! Tx Hash: ${tx.hash}`);
-
-                    // Optional: Wait for confirmation (slower response, but guaranteed)
-                    // await tx.wait(); 
+                
+                if (!contract) {
+                     throw new Error("Blockchain not configured");
                 }
-            } catch (bcError) {
-                console.error("⚠️ Blockchain sync failed:", bcError);
-                // Note: The vote is still valid in MongoDB. We just failed to mirror it.
-            }
-        }
-        // -----------------------------
 
-        res.status(200).json({ message: 'Vote cast successfully' });
+                console.log(`🔗 Submitting vote for ${candidateId} to blockchain...`);
+                // Call the smart contract
+                const tx = await contract.vote(candidateId);
+                transactionHash = tx.hash;
+                console.log(`✅ Vote submitted! Tx Hash: ${tx.hash}`);
+
+            } catch (bcError: any) {
+                console.error("⚠️ Blockchain sync failed:", bcError);
+                
+                // --- ROLLBACK MONGODB ---
+                console.log("🔄 Rolling back MongoDB changes...");
+                
+                // 1. Revert user status
+                user.hasVoted = false;
+                await user.save();
+
+                // 2. Decrement candidate vote count
+                await Candidate.findByIdAndUpdate(candidateId, { $inc: { voteCount: -1 } });
+                
+                return res.status(500).json({ 
+                    message: 'Blockchain transaction failed. Please try again.',
+                    error: bcError.message 
+                });
+            }
+        } else {
+            // Check if we need to sync abstain to blockchain (smart contract doesn't seem to have abstain?)
+            // If smart contract relies on vote count, abstaining might not be recorded there?
+            // Assuming abstain is local-only or handled differently. 
+            // If user wanted abstain to be on blockchain, we'd need a contract function for it.
+            // For now, we only rollback if it was a real candidate vote that failed.
+        }
+
+        // Persist the transaction hash to the user record
+        if (transactionHash) {
+            user.voteTransactionHash = transactionHash;
+            await user.save();
+        }
+
+        res.status(200).json({ message: 'Vote cast successfully', transactionHash });
 
     } catch (error: any) {
-        await session.abortTransaction();
+        // If session is still active/in-transaction, abort it.
+        // If we already committed (line 72), this catch block catches errors from the post-commit phase 
+        // (like the blockchain logic above, BUT we handled that with its own try/catch).
+        // So this main catch is for the initial DB logic.
+        
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
         session.endSession();
         console.error('Vote Error:', error);
-        res.status(500).json({ message: 'Voting failed. Please try again.' });
+        if (!res.headersSent) {
+             res.status(500).json({ message: 'Voting failed. Please try again.' });
+        }
+    }
+}
+
+
+// @desc    Verify vote transaction on blockchain
+// @route   GET /api/vote/verify/:hash
+// @access  Public
+export const verifyVoteTransaction = async (req: Request, res: Response) => {
+    try {
+        const { hash } = req.params;
+        const { wallet } = await import('../config/blockchain');
+
+        if (!wallet || !wallet.provider) {
+            res.status(503).json({ message: 'Blockchain service unavailable' });
+            return;
+        }
+
+        const tx = await wallet.provider.getTransaction(hash);
+
+        if (!tx) {
+            res.status(404).json({ message: 'Transaction not found on chain' });
+            return;
+        }
+
+        // Get receipt for status and block number
+        const receipt = await wallet.provider.getTransactionReceipt(hash);
+        let timestamp = null;
+
+        if (receipt) {
+            const block = await wallet.provider.getBlock(receipt.blockNumber);
+            if (block) timestamp = new Date(Number(block.timestamp) * 1000).toISOString();
+        }
+
+        res.json({
+            hash: tx.hash,
+            blockNumber: tx.blockNumber,
+            from: tx.from,
+            to: tx.to,
+            status: receipt?.status === 1 ? 'Confirmed' : 'Pending/Failed',
+            timestamp
+        });
+
+    } catch (error: any) {
+        console.error('Verify Transaction Error:', error);
+        res.status(500).json({ message: 'Error verifying transaction' });
     }
 };

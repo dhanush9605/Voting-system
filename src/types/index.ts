@@ -11,6 +11,7 @@ export interface User {
   avatarUrl?: string;
   hasVoted?: boolean;
   verificationStatus?: 'pending' | 'verified' | 'rejected';
+  voteTransactionHash?: string;
   createdAt: string;
 }
 

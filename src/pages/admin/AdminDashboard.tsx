@@ -1,7 +1,8 @@
 import { Users, UserCheck, Vote, BarChart3, TrendingUp, Calendar } from "lucide-react";
 import { StatCard, Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/auth-context";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
@@ -17,8 +18,8 @@ const AdminDashboard = () => {
   });
 
   const [pieData, setPieData] = useState<{ name: string; value: number; color: string }[]>([]);
-  const [barData, setBarData] = useState<{ day: string; votes: number }[]>([]);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [blockchain, setBlockchain] = useState({ connected: false, network: 'Unknown', address: '', balance: '0.00' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,8 +28,8 @@ const AdminDashboard = () => {
         const { data } = await api.get('/admin/dashboard');
         setStats(data.stats);
         setPieData(data.charts.pieData);
-        setBarData(data.charts.barData);
         setRecentActivity(data.recentActivity);
+        if (data.blockchain) setBlockchain(data.blockchain);
       } catch (error) {
         console.error("Failed to fetch dashboard stats", error);
       } finally {
@@ -63,6 +64,24 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Live Turnout Meter */}
+      <Card className="border-primary/20 bg-primary/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold flex justify-between items-center">
+            <span>Live Election Turnout</span>
+            <span className="text-2xl font-bold text-primary">
+              {stats.verifiedVoters > 0 ? ((stats.votesCast / stats.verifiedVoters) * 100).toFixed(1) : 0}%
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={stats.verifiedVoters > 0 ? (stats.votesCast / stats.verifiedVoters) * 100 : 0} className="h-4" />
+          <p className="text-sm text-muted-foreground mt-2 text-right">
+            {stats.votesCast} of {stats.verifiedVoters} verified voters have cast their ballots
+          </p>
+        </CardContent>
+      </Card>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
@@ -95,96 +114,81 @@ const AdminDashboard = () => {
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Pie Chart - Votes by Party */}
-        <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold">Votes by Party</CardTitle>
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Blockchain Status Card */}
+        <Card className="md:col-span-1 border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${blockchain.connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+              Blockchain Status
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={4}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="fill-foreground text-2xl font-bold">
-                    {stats.votesCast}
-                  </text>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 mt-4">
-              {pieData.map((entry, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                  <span className="text-sm text-muted-foreground">{entry.name}</span>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg border">
+                <span className="text-sm text-muted-foreground">Network</span>
+                <span className="font-medium">{blockchain.network}</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-background/50 rounded-lg border">
+                <div className="flex flex-col">
+                  <span className="text-sm text-muted-foreground">Admin Wallet</span>
+                  <span className="text-xs font-mono text-muted-foreground truncate w-24">
+                    {blockchain.address ? `${blockchain.address.slice(0, 6)}...${blockchain.address.slice(-4)}` : 'N/A'}
+                  </span>
                 </div>
-              ))}
+                <div className="text-right">
+                  <span className="text-sm text-muted-foreground">Balance</span>
+                  <p className="font-bold text-primary">{blockchain.balance} ETH</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Bar Chart - Daily Registrations */}
-        <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-semibold">Daily Registrations</CardTitle>
-            <div className="flex items-center gap-2 text-sm text-success">
-              <TrendingUp className="w-4 h-4" />
-              <span>+24%</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis
-                    dataKey="day"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                    labelStyle={{ color: 'hsl(var(--foreground))' }}
-                  />
-                  <Bar
-                    dataKey="votes"
-                    fill="hsl(var(--accent-teal))"
-                    radius={[8, 8, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Charts Row */}
+        <div className="md:col-span-2">
+          {/* Pie Chart - Votes by Party */}
+          <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-primary/20 bg-primary/5">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-semibold">Votes by Party</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="40%" // Move chart left to make room for legend
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={2}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      wrapperStyle={{ paddingLeft: '20px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Recent Activity */}
-      <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+      <Card className="transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-primary/20 bg-primary/5">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
           <button className="text-sm text-primary hover:underline">View all</button>
@@ -232,7 +236,7 @@ const AdminDashboard = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 };
 

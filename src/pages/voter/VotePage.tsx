@@ -25,7 +25,7 @@ const VotePage = () => {
   const [abstainReason, setAbstainReason] = useState("");
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [voteReceipt, setVoteReceipt] = useState<{ voteId: string; timestamp: string } | null>(null);
+  const [voteReceipt, setVoteReceipt] = useState<{ voteId: string; timestamp: string; transactionHash?: string } | null>(null);
 
   const [election, setElection] = useState<ElectionConfig | null>(null);
   const [isElectionActive, setIsElectionActive] = useState(true); // Default true until checked
@@ -89,6 +89,22 @@ const VotePage = () => {
         <Button onClick={() => navigate('/results/public')} variant="hero">
           View Results
         </Button>
+
+        {user?.voteTransactionHash && (
+          <div className="mt-8 pt-4 border-t border-accent-teal/20 max-w-sm mx-auto">
+            <p className="text-sm text-foreground/80 mb-2 font-medium">Verification Proof</p>
+            <code className="block bg-secondary p-2 rounded text-xs font-mono break-all mb-3 text-muted-foreground select-all">
+              {user.voteTransactionHash}
+            </code>
+            <Button
+              variant="outline"
+              className="w-full border-accent-teal text-accent-teal hover:bg-accent-teal/10"
+              onClick={() => window.open(`/verify-vote?hash=${user.voteTransactionHash}`, '_blank')}
+            >
+              Verify on Blockchain
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
@@ -155,11 +171,12 @@ const VotePage = () => {
       // Real API Call
       // If abstaining, send 'abstain' as candidateId
       const payload = isAbstaining ? { candidateId: 'abstain' } : { candidateId: selectedCandidate?._id || selectedCandidate?.id };
-      await api.post('/vote', payload);
+      const { data } = await api.post('/vote', payload);
 
       const receipt = {
         voteId: `VOTE-${Date.now()}`,
         timestamp: new Date().toISOString(),
+        transactionHash: data.transactionHash
       };
 
       setVoteReceipt(receipt);
@@ -172,7 +189,7 @@ const VotePage = () => {
     } catch (error: any) {
       toast({
         title: "Failed to submit vote",
-        description: error.response?.data?.message || "Please try again.",
+        description: error.response?.data?.error || error.response?.data?.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -212,6 +229,21 @@ const VotePage = () => {
               <span className="text-muted-foreground">Choice</span>
               <span className="font-medium">{isAbstaining ? 'Abstain' : selectedCandidate?.name}</span>
             </div>
+            {voteReceipt.transactionHash && (
+              <div className="flex flex-col py-2 border-t border-border mt-2">
+                <span className="text-muted-foreground text-sm mb-1">Blockchain Receipt (Tx Hash)</span>
+                <code className="bg-secondary p-2 rounded text-xs break-all select-all">
+                  {voteReceipt.transactionHash}
+                </code>
+                <Button
+                  variant="link"
+                  className="self-start px-0 mt-1 h-auto text-accent-teal"
+                  onClick={() => window.open(`/verify-vote?hash=${voteReceipt.transactionHash}`, '_blank')}
+                >
+                  Verify on Blockchain &rarr;
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

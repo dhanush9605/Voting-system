@@ -16,12 +16,17 @@ import { FaceCapture } from "@/components/auth/FaceCapture";
 
 // ... imports
 
-export function LoginForm() {
+interface LoginFormProps {
+    defaultRole?: UserRole;
+    allowRoleSelection?: boolean;
+}
+
+export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: LoginFormProps) {
     const navigate = useNavigate();
     const { login, loginWithStudentId } = useAuth();
     const { toast } = useToast();
 
-    const [role, setRole] = useState<UserRole>('voter');
+    const [role, setRole] = useState<UserRole>(defaultRole);
     const [loginMethod, setLoginMethod] = useState<LoginMethod>('email');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -37,9 +42,9 @@ export function LoginForm() {
 
         try {
             if (loginMethod === 'email') {
-                await login(email, password, role);
+                await login(email, password, role, rememberMe);
             } else {
-                await loginWithStudentId(studentId, password);
+                await loginWithStudentId(studentId, password, rememberMe);
             }
 
             toast({
@@ -85,9 +90,9 @@ export function LoginForm() {
         setIsLoading(true);
         try {
             if (loginMethod === 'email') {
-                await login(email, password, role, Array.from(descriptor));
+                await login(email, password, role, rememberMe, Array.from(descriptor));
             } else {
-                await loginWithStudentId(studentId, password, Array.from(descriptor));
+                await loginWithStudentId(studentId, password, rememberMe, Array.from(descriptor));
             }
 
             toast({
@@ -118,7 +123,14 @@ export function LoginForm() {
         <Card className="border-0 shadow-elevated w-full max-w-md mx-auto">
             <CardHeader className="space-y-1 pb-6">
                 <CardTitle className="text-2xl font-bold">
-                    {isFaceVerificationStep ? "Face Verification" : "Welcome back"}
+                    {isFaceVerificationStep
+                        ? "Face Verification"
+                        : allowRoleSelection
+                            ? "Welcome back"
+                            : role === 'admin'
+                                ? "Admin Portal"
+                                : "Voter Login"
+                    }
                 </CardTitle>
                 <CardDescription>
                     {isFaceVerificationStep
@@ -141,32 +153,34 @@ export function LoginForm() {
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Role selector - Only Voter and Admin */}
-                        <div className="space-y-3">
-                            <Label className="text-sm font-medium">I am a</Label>
-                            <RadioGroup
-                                value={role}
-                                onValueChange={(value) => setRole(value as UserRole)}
-                                className="grid grid-cols-2 gap-3"
-                            >
-                                {roleOptions.map((option) => (
-                                    <Label
-                                        key={option.value}
-                                        htmlFor={option.value}
-                                        className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${role === option.value
-                                            ? 'border-primary bg-primary/5'
-                                            : 'border-border hover:border-primary/30 hover:bg-muted/50'
-                                            }`}
-                                    >
-                                        <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
-                                        <option.icon className={`w-5 h-5 ${role === option.value ? 'text-primary' : 'text-muted-foreground'}`} />
-                                        <span className={`text-sm font-medium ${role === option.value ? 'text-primary' : 'text-muted-foreground'}`}>
-                                            {option.label}
-                                        </span>
-                                    </Label>
-                                ))}
-                            </RadioGroup>
-                        </div>
+                        {/* Role selector - Only shown if allowed */}
+                        {allowRoleSelection && (
+                            <div className="space-y-3">
+                                <Label className="text-sm font-medium">I am a</Label>
+                                <RadioGroup
+                                    value={role}
+                                    onValueChange={(value) => setRole(value as UserRole)}
+                                    className="grid grid-cols-2 gap-3"
+                                >
+                                    {roleOptions.map((option) => (
+                                        <Label
+                                            key={option.value}
+                                            htmlFor={option.value}
+                                            className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${role === option.value
+                                                ? 'border-primary bg-primary/5'
+                                                : 'border-border hover:border-primary/30 hover:bg-muted/50'
+                                                }`}
+                                        >
+                                            <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
+                                            <option.icon className={`w-5 h-5 ${role === option.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                                            <span className={`text-sm font-medium ${role === option.value ? 'text-primary' : 'text-muted-foreground'}`}>
+                                                {option.label}
+                                            </span>
+                                        </Label>
+                                    ))}
+                                </RadioGroup>
+                            </div>
+                        )}
 
                         {/* Login method toggle for voters */}
                         {role === 'voter' && (

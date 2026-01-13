@@ -3,11 +3,18 @@ import Webcam from 'react-webcam';
 import * as faceapi from 'face-api.js';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, Camera, CheckCircle2, AlertCircle, VideoOff } from 'lucide-react';
+import { Loader2, Camera, CheckCircle2, AlertCircle, VideoOff, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FaceCaptureProps {
     onCapture: (imageSrc: string, descriptor: Float32Array) => void;
+}
+
+type ChallengeType = 'turnLeft' | 'turnRight';
+
+interface ChallengeConfig {
+    type: ChallengeType;
+    instruction: string;
 }
 
 export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
@@ -17,30 +24,40 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
     const [cameraReady, setCameraReady] = useState(false);
     const [cameraError, setCameraError] = useState<string | null>(null);
 
-    // Added 'straighten' state for post-verification capture prep
-    const [detectionState, setDetectionState] = useState<'loading' | 'position' | 'blink' | 'straighten' | 'success' | 'failed'>('loading');
+    // State Machine
+    const [detectionState, setDetectionState] = useState<'loading' | 'position' | 'challenge' | 'straighten' | 'success' | 'failed'>('loading');
+    const [currentChallenge, setCurrentChallenge] = useState<ChallengeConfig | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [currentAngle, setCurrentAngle] = useState(0);
 
-    // Timeout logic
+    // Refs for timing and logic
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const challengeStartTimeRef = useRef<number | null>(null);
+    const processingRef = useRef(false);
+    const straightenStartTimeRef = useRef<number | null>(null);
+
+    // Strict State Tracking for Sequence Checks (e.g. Blink: Open -> Closed -> Open)
+    const challengeStateRef = useRef<{
+        blinkStage: 'waiting_for_close' | 'closed' | 'waiting_for_open' | 'done';
+        lastYaw: number;
+        stableCount: number;
+    }>({
+        blinkStage: 'waiting_for_close',
+        lastYaw: 0,
+        stableCount: 0
+    });
+
+    // Timeout logic - 15 seconds to complete the challenge
     useEffect(() => {
-        if (detectionState === 'position' || detectionState === 'blink') {
+        if (detectionState === 'challenge') {
             timeoutRef.current = setTimeout(() => {
+                setErrorMessage("Timed out. Please act faster.");
                 setDetectionState('failed');
-            }, 30000); // 30 seconds timeout
+            }, 15000);
             return () => {
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
             };
         }
     }, [detectionState]);
-
-    // Head Tilt & Straighten state
-    const tiltStartTimeRef = useRef<number | null>(null);
-    const straightenStartTimeRef = useRef<number | null>(null);
-    const processingRef = useRef(false);
-    const requiredTiltDuration = 500; // ms to hold tilt
-    const requiredTiltAngle = 15; // degrees
 
     // Load models
     useEffect(() => {
@@ -48,7 +65,6 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
             try {
                 const MODEL_URL = '/models';
                 console.log('Loading face-api models...');
-                // Reverting to TinyFaceDetector for speed (User reported SSD was too slow)
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -59,141 +75,181 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
             } catch (err) {
                 console.error('Failed to load models:', err);
                 setErrorMessage('Failed to load face detection models. Please refresh.');
+                setDetectionState('failed');
             }
         };
         loadModels();
     }, []);
 
-    // Calculate Head Roll (Tilt)
-    const getHeadRoll = (landmarks: faceapi.FaceLandmarks68) => {
-        const leftEye = landmarks.getLeftEye();
-        const rightEye = landmarks.getRightEye();
+    // --- Geometric Helpers ---
 
-        // Use center of eyes
-        const leftCenter = leftEye[0]; // approximated
-        const rightCenter = rightEye[3];
-
-        const dy = rightCenter.y - leftCenter.y;
-        const dx = rightCenter.x - leftCenter.x;
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-        return angle;
+    const getFaceYaw = (landmarks: faceapi.FaceLandmarks68) => {
+        const nose = landmarks.getNose()[0];
+        const leftJaw = landmarks.getJawOutline()[0];
+        const rightJaw = landmarks.getJawOutline()[16];
+        const leftDist = nose.x - leftJaw.x;
+        const rightDist = rightJaw.x - nose.x;
+        // Ratio: > 1.5 means looking Right, < 0.6 means looking Left
+        return leftDist / (rightDist + 0.1);
     };
 
+    const getEyeRatio = (eyePoints: faceapi.Point[]) => {
+        // EAR = (|p2-p6| + |p3-p5|) / (2 * |p1-p4|)
+        const a = eyePoints[1].y - eyePoints[5].y;
+        const b = eyePoints[2].y - eyePoints[4].y;
+        const c = eyePoints[0].x - eyePoints[3].x;
+        return (Math.abs(a) + Math.abs(b)) / (2 * Math.abs(c));
+    };
+
+
+
+    const generateChallenge = useCallback((): ChallengeConfig => {
+        const challenges: ChallengeConfig[] = [
+            { type: 'turnLeft', instruction: "Turn head to your LEFT" },
+            { type: 'turnRight', instruction: "Turn head to your RIGHT" }
+        ];
+        // Weighted random? No, simple random for now.
+        return challenges[Math.floor(Math.random() * challenges.length)];
+    }, []);
+
+    const checkChallenge = (type: ChallengeType, landmarks: faceapi.FaceLandmarks68): boolean => {
+        const yaw = getFaceYaw(landmarks);
+
+        // Debug
+        // console.log(`Type: ${type}, Yaw: ${yaw.toFixed(2)}`);
+
+        if (type === 'turnLeft') {
+            // Logic: Looking Left -> Nose moves to Subject's Left (High X) -> DistToLeftJaw (rightDist) decreases, DistToRightJaw (leftDist) increases
+            // Ratio = DistToRight / DistToLeft -> LARGE
+            const passed = yaw > 1.5;
+            return passed;
+        }
+
+        if (type === 'turnRight') {
+            // Logic: Looking Right -> Nose moves to Subject's Right (Low X) -> DistToRightJaw (leftDist) decreases
+            // Ratio = DistToRight / DistToLeft -> SMALL
+            const passed = yaw < 0.6;
+            return passed;
+        }
+
+        return false;
+    };
+
+
     const startDetection = useCallback(() => {
-        // Detection loop
-        let intervalId: NodeJS.Timeout;
+        let isCancelled = false;
+        let timeoutId: NodeJS.Timeout;
 
         const detect = async () => {
-            if (!webcamRef.current || !webcamRef.current.video || !canvasRef.current || processingRef.current) return;
+            if (isCancelled) return;
+
+            // Check if we should process this frame
+            const video = webcamRef.current?.video;
+            const isReady = video && video.readyState === 4 && canvasRef.current && !processingRef.current;
+
             if (detectionState === 'success' || detectionState === 'failed') return;
 
-            const video = webcamRef.current.video;
+            if (isReady && video && canvasRef.current) {
+                processingRef.current = true;
+                try {
+                    const displaySize = { width: video.videoWidth, height: video.videoHeight };
+                    faceapi.matchDimensions(canvasRef.current, displaySize);
 
-            // Ensure video is ready
-            if (video.readyState !== 4) return;
+                    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+                    const detection = await faceapi.detectSingleFace(video, options)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
 
-            const displaySize = { width: video.videoWidth, height: video.videoHeight };
-            faceapi.matchDimensions(canvasRef.current, displaySize);
+                    const ctx = canvasRef.current.getContext('2d');
+                    if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-            try {
-                // Revert to TinyFaceDetectorOptions for speed
-                const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+                    if (detection) {
+                        const resizedDetection = faceapi.resizeResults(detection, displaySize);
 
-                const detection = await faceapi.detectSingleFace(video, options)
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-
-                // Clear canvas
-                const ctx = canvasRef.current.getContext('2d');
-                if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-
-                if (detection) {
-                    // Update state to position if properly detected for the first time
-                    if (detectionState === 'loading') {
-                        setDetectionState('position');
-                    }
-
-                    const resizedDetection = faceapi.resizeResults(detection, displaySize);
-
-                    const face = resizedDetection;
-                    const landmarks = face.landmarks;
-                    const leftEye = landmarks.getLeftEye();
-                    const rightEye = landmarks.getRightEye();
-
-                    // Head Tilt Logic
-                    const rollAngle = getHeadRoll(landmarks);
-                    setCurrentAngle(rollAngle); // Update visual state
-
-                    if (detectionState === 'position') {
-                        // Once face is detected stably, ask to tilt
-                        // Delay slightly to ensure user reads instruction
-                        if (!tiltStartTimeRef.current) tiltStartTimeRef.current = Date.now();
-                        if (Date.now() - tiltStartTimeRef.current > 1000) {
-                            setDetectionState('blink'); // Reusing 'blink' state name for 'action' state logic
-                            tiltStartTimeRef.current = null; // Reset for actual action timer
+                        if (detectionState === 'loading') {
+                            setDetectionState('position');
                         }
-                    }
 
-                    if (detectionState === 'blink') {
-                        // Check if tilted Left or Right significantly (> 15 degrees)
-                        const isTilted = Math.abs(rollAngle) > requiredTiltAngle;
+                        if (detectionState === 'position') {
+                            const box = resizedDetection.detection.box;
+                            const centerX = box.x + box.width / 2;
+                            const isCentered = centerX > displaySize.width * 0.3 && centerX < displaySize.width * 0.7;
 
-                        if (isTilted) {
-                            if (!tiltStartTimeRef.current) {
-                                tiltStartTimeRef.current = Date.now();
+                            if (isCentered) {
+                                if (!challengeStartTimeRef.current) challengeStartTimeRef.current = Date.now();
+                                if (Date.now() - challengeStartTimeRef.current > 2000) {
+                                    const challenge = generateChallenge();
+                                    setCurrentChallenge(challenge);
+                                    setDetectionState('challenge');
+                                    challengeStartTimeRef.current = null;
+                                }
                             } else {
-                                const duration = Date.now() - tiltStartTimeRef.current;
-                                if (duration > requiredTiltDuration) {
-                                    // Move to next stage instead of capturing immediately
+                                challengeStartTimeRef.current = null;
+                            }
+                        }
+
+                        if (detectionState === 'challenge' && currentChallenge) {
+                            const passed = checkChallenge(currentChallenge.type, resizedDetection.landmarks);
+
+                            if (passed) {
+                                if (!challengeStartTimeRef.current) {
+                                    challengeStartTimeRef.current = Date.now();
+                                }
+
+                                if (challengeStartTimeRef.current && Date.now() - challengeStartTimeRef.current > 500) {
                                     setDetectionState('straighten');
-                                    tiltStartTimeRef.current = null;
+                                    challengeStartTimeRef.current = null;
                                 }
-                            }
-                        } else {
-                            tiltStartTimeRef.current = null;
-                        }
-                    }
-
-                    if (detectionState === 'straighten') {
-                        // Check if head is back to straight (within 8 degrees)
-                        const isStraight = Math.abs(rollAngle) < 8;
-
-                        if (isStraight) {
-                            if (!straightenStartTimeRef.current) {
-                                straightenStartTimeRef.current = Date.now();
                             } else {
-                                const duration = Date.now() - straightenStartTimeRef.current;
-                                // Wait 800ms of straightness before snapping to ensure stability and user readiness
-                                if (duration > 800) {
-                                    handleCapture(face.descriptor);
-                                }
+                                challengeStartTimeRef.current = null;
                             }
-                        } else {
-                            straightenStartTimeRef.current = null;
+                        }
+
+                        if (detectionState === 'straighten') {
+                            const yaw = getFaceYaw(resizedDetection.landmarks);
+                            const isStraight = yaw > 0.85 && yaw < 1.15;
+
+                            if (isStraight) {
+                                if (!straightenStartTimeRef.current) straightenStartTimeRef.current = Date.now();
+                                if (Date.now() - straightenStartTimeRef.current > 800) {
+                                    handleCapture(detection.descriptor);
+                                    return; // Stop loop on capture
+                                }
+                            } else {
+                                straightenStartTimeRef.current = null;
+                            }
+                        }
+
+                        if (ctx) {
+                            const box = resizedDetection.detection.box;
+                            ctx.strokeStyle = detectionState === 'straighten' ? '#10B981' : '#0EA5E9';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(box.x, box.y, box.width, box.height);
                         }
                     }
-
-                    // Visual feedback for face box
-                    if (ctx) {
-                        const box = resizedDetection.detection.box;
-                        ctx.strokeStyle = detectionState === 'straighten' ? '#10B981' : '#0EA5E9'; // Green if verified
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(box.x, box.y, box.width, box.height);
-                    }
+                } catch (err) {
+                    console.error("Detection Error", err);
+                } finally {
+                    processingRef.current = false;
                 }
+            }
 
-            } catch (err) {
-                console.error('Detection error:', err);
+            // Always reschedule loop if not cancelled/finished
+            if (!isCancelled) {
+                timeoutId = setTimeout(detect, 200);
             }
         };
 
-        intervalId = setInterval(detect, 200); // 5fps check is enough and saves battery
-        return () => clearInterval(intervalId);
+        detect();
 
-    }, [detectionState]);
+        return () => {
+            isCancelled = true;
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [detectionState, currentChallenge, generateChallenge]);
 
+    // Attach listener
     useEffect(() => {
-        // Start detection when model is loaded and camera is ready
         if (modelLoaded && cameraReady) {
             const cleanup = startDetection();
             return cleanup;
@@ -203,15 +259,19 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
     const handleCapture = (descriptor: Float32Array) => {
         if (!webcamRef.current) return;
         processingRef.current = true;
-
         const imageSrc = webcamRef.current.getScreenshot();
         if (imageSrc) {
             setDetectionState('success');
-            // Delay slightly to show success state
-            setTimeout(() => {
-                onCapture(imageSrc, descriptor);
-            }, 1000);
+            setTimeout(() => onCapture(imageSrc, descriptor), 1500);
         }
+    };
+
+    const retry = () => {
+        setDetectionState('position');
+        setErrorMessage(null);
+        setCurrentChallenge(null);
+        processingRef.current = false;
+        challengeStartTimeRef.current = null;
     };
 
     return (
@@ -229,21 +289,9 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                         <VideoOff className="w-12 h-12 mb-2" />
                         <p className="font-bold mb-1">Camera Error</p>
                         <p className="text-sm">{cameraError}</p>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            className="mt-4"
-                            onClick={() => window.location.reload()}
-                        >
+                        <Button variant="secondary" size="sm" className="mt-4" onClick={() => window.location.reload()}>
                             Reload Page
                         </Button>
-                    </div>
-                )}
-
-                {detectionState === 'success' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-green-400 z-30 animate-in fade-in zoom-in duration-300">
-                        <CheckCircle2 className="w-16 h-16 mb-2" />
-                        <p className="text-xl font-bold">Capturing...</p>
                     </div>
                 )}
 
@@ -251,117 +299,70 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
                     ref={webcamRef}
                     audio={false}
                     screenshotFormat="image/jpeg"
-                    className={cn("w-full h-full object-cover transform scale-x-[-1]", // Mirror effect
+                    className={cn("w-full h-full object-cover transform scale-x-[-1]",
                         detectionState === 'success' ? 'opacity-50' : 'opacity-100'
                     )}
-                    videoConstraints={{
-                        facingMode: "user",
-                        width: 640,
-                        height: 480
-                    }}
-                    onUserMedia={() => {
-                        console.log("Camera started successfully");
-                        setCameraReady(true);
-                    }}
-                    onUserMediaError={(err) => {
-                        console.error("Camera failed to start:", err);
-                        setCameraError("Could not access camera. Please allow permissions.");
-                    }}
+                    videoConstraints={{ facingMode: "user", width: 640, height: 480 }}
+                    onUserMedia={() => setCameraReady(true)}
+                    onUserMediaError={() => setCameraError("Could not access camera.")}
                 />
 
-                <canvas
-                    ref={canvasRef}
-                    className="absolute inset-0 w-full h-full transform scale-x-[-1] pointer-events-none"
-                />
+                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full transform scale-x-[-1] pointer-events-none" />
 
-                {/* Failure Overlay */}
-                {detectionState === 'failed' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 text-destructive z-30 animate-in fade-in zoom-in duration-300">
-                        <AlertCircle className="w-16 h-16 mb-2" />
-                        <p className="text-xl font-bold mb-4">Verification Failed</p>
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => {
-                                setDetectionState('position'); // Retry
-                                tiltStartTimeRef.current = null;
-                            }}
-                        >
-                            Try Again
-                        </Button>
-                    </div>
-                )}
-
-                {/* Overlay Instructions */}
-                {detectionState !== 'loading' && detectionState !== 'success' && detectionState !== 'failed' && !cameraError && (
-                    <div className="absolute bottom-4 left-0 right-0 text-center z-10 flex flex-col items-center">
-                        <div className={cn(
-                            "inline-block px-4 py-2 rounded-full text-white backdrop-blur-sm shadow-lg transition-all duration-300 mb-2",
-                            detectionState === 'straighten' ? "bg-green-500/90" : "bg-black/60"
-                        )}>
-                            {detectionState === 'position' && "Center your face in the frame"}
-                            {detectionState === 'blink' && (
-                                <span className="flex items-center gap-2">
-                                    Please <span className="font-bold text-primary-foreground">TILT HEAD</span> left or right
-                                </span>
-                            )}
-                            {detectionState === 'straighten' && (
-                                <span className="flex items-center gap-2 font-bold animate-pulse">
-                                    <CheckCircle2 className="w-5 h-5" /> VERIFIED! Hold Straight 📸
-                                </span>
-                            )}
+                {/* State Overlays */}
+                <div className="absolute bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
+                    {detectionState === 'position' && (
+                        <div className="bg-black/60 text-white px-4 py-2 rounded-full backdrop-blur-sm animate-in fade-in slide-in-from-bottom-5">
+                            Center your face to start
                         </div>
+                    )}
 
-                        {/* Tilt Meter Visual (Only during tilt phase) */}
-                        {detectionState === 'blink' && (
-                            <div className="w-64 h-4 bg-gray-700/50 rounded-full mx-auto overflow-hidden relative border border-white/20">
-                                {/* Center Marker */}
-                                <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/50 -translate-x-1/2 z-10"></div>
+                    {detectionState === 'challenge' && currentChallenge && (
+                        <div className="bg-blue-600/90 text-white px-6 py-3 rounded-full shadow-lg font-bold text-lg animate-pulse flex items-center gap-2">
+                            {currentChallenge.type === 'turnLeft' && <span className="text-4xl">⬅️</span>}
+                            {currentChallenge.type === 'turnRight' && <span className="text-4xl">➡️</span>}
+                            {currentChallenge.instruction}
+                        </div>
+                    )}
 
-                                {/* Moving Indicator */}
-                                <div
-                                    className={cn(
-                                        "absolute top-0 bottom-0 transition-all duration-100 ease-out w-1/2",
-                                        Math.abs(currentAngle) > requiredTiltAngle ? "bg-green-500" : "bg-blue-500",
-                                        currentAngle > 0 ? "left-1/2 origin-left" : "right-1/2 origin-right"
-                                    )}
-                                    style={{
-                                        transform: `scaleX(${Math.min(Math.abs(currentAngle) / 45, 1)})`
-                                    }}
-                                ></div>
-                            </div>
-                        )}
+                    {detectionState === 'straighten' && (
+                        <div className="bg-green-500/90 text-white px-4 py-2 rounded-full font-bold animate-in zoom-in">
+                            Great! Look straight... 📸
+                        </div>
+                    )}
+
+                    {detectionState === 'success' && (
+                        <div className="bg-green-600 text-white px-6 py-2 rounded-full flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5" /> Verified
+                        </div>
+                    )}
+                </div>
+
+                {/* Failure Screen */}
+                {detectionState === 'failed' && (
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-40 animate-in fade-in">
+                        <AlertCircle className="w-12 h-12 text-destructive mb-2" />
+                        <h3 className="text-xl font-bold text-white mb-1">Verification Failed</h3>
+                        <p className="text-gray-300 text-sm mb-4">{errorMessage || "Liveness check failed."}</p>
+                        <Button onClick={retry} variant="secondary" size="sm" className="gap-2">
+                            <RefreshCw className="w-4 h-4" /> Try Again
+                        </Button>
                     </div>
                 )}
             </div>
 
             <div className="p-4 bg-muted/30">
                 <div className="flex items-start gap-4">
-                    {detectionState === 'success' ? (
-                        <div className="p-2 rounded-full bg-green-100 text-green-600">
-                            <CheckCircle2 className="w-6 h-6" />
-                        </div>
-                    ) : detectionState === 'failed' || cameraError ? (
-                        <div className="p-2 rounded-full bg-red-100 text-red-600">
-                            <AlertCircle className="w-6 h-6" />
-                        </div>
-                    ) : (
-                        <div className="p-2 rounded-full bg-blue-100 text-blue-600">
-                            <Camera className="w-6 h-6" />
-                        </div>
-                    )}
+                    <div className={cn("p-2 rounded-full",
+                        detectionState === 'success' ? "bg-green-100 text-green-600" :
+                            detectionState === 'failed' ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
+                    )}>
+                        <Camera className="w-6 h-6" />
+                    </div>
                     <div>
-                        <h3 className="font-semibold text-foreground">
-                            {detectionState === 'success' ? 'Biometric Verified' : 'Live Verification'}
-                        </h3>
+                        <h3 className="font-semibold text-foreground">Live Verification</h3>
                         <p className="text-sm text-muted-foreground mt-1">
-                            {cameraError ? "Camera access issue." :
-                                detectionState === 'loading' ? "Initializing secure camera..." :
-                                    detectionState === 'position' ? "We need to verify you are a real person." :
-                                        detectionState === 'blink' ? "Tilting head proves liveness (anti-spoofing)." :
-                                            detectionState === 'straighten' ? "Great! Now look at the camera for your photo." :
-                                                detectionState === 'success' ? "Your face biometric has been secured." :
-                                                    "No face detected or no blink. Please retry."}
+                            Follow the instructions (Turn Head Left/Right) to prove liveness.
                         </p>
                     </div>
                 </div>

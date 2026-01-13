@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware'; // Ensure this is exported
 import User, { VerificationStatus } from '../models/User';
 import Election from '../models/Election';
+import { wallet } from '../config/blockchain';
+import { ethers } from 'ethers';
 
 import { UserRole } from '../models/User';
 import Notification from '../models/Notification';
@@ -147,6 +149,30 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
             { $sort: { _id: 1 } }
         ]);
 
+        // Blockchain Stats
+        let blockchainStats = {
+            connected: false,
+            network: 'Unknown',
+            address: '',
+            balance: '0.00'
+        };
+
+        if (wallet) {
+            try {
+                const balanceWei = await wallet.provider?.getBalance(wallet.address);
+                const balanceEth = balanceWei ? ethers.formatEther(balanceWei) : '0.0';
+
+                blockchainStats = {
+                    connected: true,
+                    network: 'Sepolia', // Hardcoded for now as per config
+                    address: wallet.address,
+                    balance: parseFloat(balanceEth).toFixed(4)
+                };
+            } catch (err) {
+                console.error("Error fetching blockchain balance:", err);
+            }
+        }
+
         // Recent Activity (Latest 5 voters)
         const recentUsers = await User.find({ role: UserRole.VOTER })
             .sort({ updatedAt: -1 })
@@ -191,6 +217,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
                     votes: d.votes
                 }))
             },
+            blockchain: blockchainStats,
             recentActivity
         });
 

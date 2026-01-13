@@ -3,10 +3,11 @@ import { User, UserRole, AuthState } from '@/types';
 import api from './api';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string, role: UserRole, faceDescriptor?: number[]) => Promise<void>;
-  loginWithStudentId: (studentId: string, password: string, faceDescriptor?: number[]) => Promise<void>;
+  login: (email: string, password: string, role: UserRole, rememberMe: boolean, faceDescriptor?: number[]) => Promise<void>;
+  loginWithStudentId: (studentId: string, password: string, rememberMe: boolean, faceDescriptor?: number[]) => Promise<void>;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,9 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  const login = useCallback(async (email: string, password: string, role: UserRole, faceDescriptor?: number[]) => {
+  const login = useCallback(async (email: string, password: string, role: UserRole, rememberMe: boolean, faceDescriptor?: number[]) => {
     try {
-      const { data } = await api.post('/auth/login', { email, password, faceDescriptor });
+      const { data } = await api.post('/auth/login', { email, password, rememberMe, faceDescriptor });
 
       if (data.role !== role && role !== 'admin') { // Admin can login anywhere usually, or restrict
         // For strict role checking:
@@ -66,9 +67,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const loginWithStudentId = useCallback(async (studentId: string, password: string, faceDescriptor?: number[]) => {
+  const loginWithStudentId = useCallback(async (studentId: string, password: string, rememberMe: boolean, faceDescriptor?: number[]) => {
     try {
-      const { data } = await api.post('/auth/login', { studentId, password, faceDescriptor });
+      const { data } = await api.post('/auth/login', { studentId, password, rememberMe, faceDescriptor });
 
       setState({
         user: data,
@@ -104,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, loginWithStudentId, logout, updateUser }}>
+    <AuthContext.Provider value={{ ...state, login, loginWithStudentId, logout, updateUser, refreshProfile: checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

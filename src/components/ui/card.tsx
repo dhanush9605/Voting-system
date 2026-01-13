@@ -49,46 +49,41 @@ interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
   ({ className, variant = 'teal', icon, title, value, change, ...props }, ref) => {
-    const variantClasses = {
-      coral: 'bg-accent-coral-light',
-      teal: 'bg-accent-teal-light',
-      pink: 'bg-accent-pink-light',
-      purple: 'bg-accent-purple-light',
-      green: 'bg-accent-green-light',
-    };
-
+    // Background colors removed, focusing on clean white card
     const iconClasses = {
-      coral: 'bg-accent-coral text-primary-foreground',
-      teal: 'bg-accent-teal text-primary-foreground',
-      pink: 'bg-accent-pink text-primary-foreground',
-      purple: 'bg-accent-purple text-primary-foreground',
-      green: 'bg-accent-green text-primary-foreground',
+      coral: 'bg-orange-100 text-orange-600',
+      teal: 'bg-teal-100 text-teal-600',
+      pink: 'bg-pink-100 text-pink-600',
+      purple: 'bg-purple-100 text-purple-600',
+      green: 'bg-green-100 text-green-600',
     };
 
     return (
       <div
         ref={ref}
         className={cn(
-          "rounded-xl p-5 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
-          variantClasses[variant],
+          "rounded-xl p-6 border border-primary/20 bg-primary/5 text-card-foreground shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1",
           className
         )}
         {...props}
       >
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <h3 className="text-2xl font-bold mt-2">{value}</h3>
+          </div>
           {icon && (
-            <div className={cn("p-2 rounded-lg", iconClasses[variant])}>
+            <div className={cn("p-3 rounded-xl", iconClasses[variant])}>
               {icon}
             </div>
           )}
         </div>
-        <div className="mt-4">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-2xl font-bold mt-1 text-foreground">{value}</p>
-          {change && (
-            <p className="text-xs text-muted-foreground mt-1">{change}</p>
-          )}
-        </div>
+
+        {change && (
+          <div className="mt-4 flex items-center text-xs">
+            <span className="text-muted-foreground">{change}</span>
+          </div>
+        )}
       </div>
     );
   }

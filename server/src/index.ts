@@ -18,7 +18,11 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 app.use(cors({
-    origin: true, // Allow all origins for local testing
+    origin: [
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'https://voting2026.vercel.app'
+    ],
     credentials: true
 }));
 app.use(express.json());
@@ -46,6 +50,17 @@ app.use('/api/election', electionRoutes);
 app.get('/', (req, res) => {
     res.send('Voting System API is running');
 });
+
+// Serve static assets in production
+import path from 'path';
+if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
+    // Set static folder
+    app.use(express.static(path.join(__dirname, '../../dist')));
+
+    app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, '../../', 'dist', 'index.html'));
+    });
+}
 
 if (require.main === module) {
     app.listen(PORT, () => {

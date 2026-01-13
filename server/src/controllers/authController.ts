@@ -19,7 +19,17 @@ const generateRefreshToken = (id: string) => {
     });
 };
 
-const sendTokenResponse = async (user: IUser, statusCode: number, res: Response) => {
+const euclideanDistance = (desc1: number[], desc2: number[]): number => {
+    if (desc1.length !== desc2.length) return 1.0; // Max distance
+    let sum = 0;
+    for (let i = 0; i < desc1.length; i++) {
+        const diff = desc1[i] - desc2[i];
+        sum += diff * diff;
+    }
+    return Math.sqrt(sum);
+};
+
+const sendTokenResponse = async (user: IUser, statusCode: number, res: Response, rememberMe: boolean = false) => {
     const accessToken = generateAccessToken((user._id as unknown) as string);
     const refreshToken = generateRefreshToken((user._id as unknown) as string);
 
@@ -36,13 +46,19 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response)
         maxAge: 15 * 60 * 1000 // 15 minutes
     });
 
-    res.cookie('refresh_token', refreshToken, {
+    const refreshTokenOptions: any = {
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'strict' : 'lax', // Relax for dev
-        path: '/api/auth/refresh', // Restrict to refresh endpoint
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-    });
+        path: '/api/auth/refresh' // Restrict to refresh endpoint
+    };
+
+    if (rememberMe) {
+        refreshTokenOptions.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+    }
+    // Else: No maxAge -> Session cookie (cleared on browser close)
+
+    res.cookie('refresh_token', refreshToken, refreshTokenOptions);
 
     res.status(statusCode).json({
         _id: user._id,
@@ -52,7 +68,8 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response)
         verificationStatus: user.verificationStatus,
         hasVoted: user.hasVoted,
         imageHash: user.imageHash,
-        imageUrl: user.imageUrl
+        imageUrl: user.imageUrl,
+        voteTransactionHash: user.voteTransactionHash
     });
 };
 
@@ -72,6 +89,50 @@ export const registerUser = async (req: Request, res: Response) => {
             res.status(400).json({ message });
             return;
         }
+
+        // --- Duplicate Face Check Start ---
+        if (imageHash) {
+            try {
+                const newFaceDescriptor = JSON.parse(imageHash);
+
+                // Fetch all users with a registered face
+                // Optimization: In a large production app, use a vector DB or filtered query
+                const existingUsers = await User.find({ imageHash: { $exists: true, $ne: null } });
+
+                const DUPLICATE_THRESHOLD = 0.45; // Strict threshold for registration
+
+                for (const existingUser of existingUsers) {
+                    // Skip if for some reason imageHash is missing on the object (though query filters it)
+                    if (!existingUser.imageHash) continue;
+
+                    // Skip if not a JSON array string
+                    if (!existingUser.imageHash.trim().startsWith('[')) {
+                        continue;
+                    }
+
+                    try {
+                        const existingDescriptor = JSON.parse(existingUser.imageHash);
+                        const distance = euclideanDistance(newFaceDescriptor, existingDescriptor);
+
+                        if (distance < DUPLICATE_THRESHOLD) {
+                            console.log(`Duplicate Registration Attempt: Face matches user ${existingUser._id} (${existingUser.email}) with distance ${distance}`);
+                            res.status(400).json({
+                                message: 'This face is already registered with another account. Multiple accounts are not allowed.'
+                            });
+                            return;
+                        }
+                    } catch (e) {
+                        // Ignore parsing errors for individual existing users to prevent blocking valid registrations
+                        console.error(`Error parsing imageHash for user ${existingUser._id}`, e);
+                    }
+                }
+            } catch (error) {
+                console.error('Error processing face descriptor during registration:', error);
+                res.status(400).json({ message: 'Invalid face data provided.' });
+                return;
+            }
+        }
+        // --- Duplicate Face Check End ---
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -101,7 +162,7 @@ export const registerUser = async (req: Request, res: Response) => {
                 await Notification.insertMany(notifications);
             }
 
-            await sendTokenResponse(user, 201, res);
+            await sendTokenResponse(user, 201, res, false); // Registering = Default/No remember me or handle if needed
         } else {
             res.status(400).json({ message: 'Invalid user data' });
         }
@@ -115,7 +176,7 @@ export const registerUser = async (req: Request, res: Response) => {
 // @access  Public
 export const loginUser = async (req: Request, res: Response) => {
     try {
-        const { email, studentId, password, faceDescriptor } = req.body;
+        const { email, studentId, password, faceDescriptor, rememberMe } = req.body;
 
         // Construct query based on what was provided
         const query = email ? { email } : { studentId };
@@ -124,6 +185,7 @@ export const loginUser = async (req: Request, res: Response) => {
             res.status(400).json({ message: 'Please provide email or student ID' });
             return;
         }
+
 
         const user = await User.findOne(query);
 
@@ -143,6 +205,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
         if (await bcrypt.compare(password, user.password as string)) {
             // Credentials Matched. Now check for Biometrics if Voter.
+
 
             if (user.role === UserRole.VOTER) {
                 // 1. Check if Face Data is present from registration
@@ -170,7 +233,7 @@ export const loginUser = async (req: Request, res: Response) => {
                     try {
                         const registeredDescriptor = JSON.parse(user.imageHash);
                         const distance = euclideanDistance(faceDescriptor, registeredDescriptor);
-                        const THRESHOLD = 0.55;
+                        const THRESHOLD = 0.60;
 
                         if (distance > THRESHOLD) {
                             // Failed Face Check
@@ -192,7 +255,7 @@ export const loginUser = async (req: Request, res: Response) => {
             user.lockUntil = undefined;
             await user.save();
 
-            await sendTokenResponse(user, 200, res);
+            await sendTokenResponse(user, 200, res, rememberMe);
         } else {
             // Failure: Increment attempts
             user.loginAttempts = (user.loginAttempts || 0) + 1;
@@ -311,6 +374,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             verificationStatus: user.verificationStatus,
             hasVoted: user.hasVoted,
             imageUrl: user.imageUrl,
+            voteTransactionHash: user.voteTransactionHash
         });
     } else {
         res.status(404).json({ message: 'User not found' });
@@ -337,15 +401,7 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
     }
 };
 
-const euclideanDistance = (desc1: number[], desc2: number[]): number => {
-    if (desc1.length !== desc2.length) return 1.0; // Max distance
-    let sum = 0;
-    for (let i = 0; i < desc1.length; i++) {
-        const diff = desc1[i] - desc2[i];
-        sum += diff * diff;
-    }
-    return Math.sqrt(sum);
-};
+
 
 // @desc    Verify user face
 // @route   POST /api/auth/verify-face
@@ -388,8 +444,8 @@ export const verifyFace = async (req: AuthRequest, res: Response) => {
 
         const distance = euclideanDistance(faceDescriptor, registeredDescriptor);
         console.log(`VerifyRequest: Distance=${distance}`);
-        // Adjusted threshold to 0.45 for TinyFaceDetector (faster but slightly less accurate)
-        const THRESHOLD = 0.45;
+        // Adjusted threshold to 0.55
+        const THRESHOLD = 0.55;
 
         if (distance < THRESHOLD) {
             user.verificationStatus = VerificationStatus.VERIFIED;

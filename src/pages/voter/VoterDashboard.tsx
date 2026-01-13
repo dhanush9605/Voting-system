@@ -113,6 +113,20 @@ const VoterDashboard = () => {
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
+
+                {user?.voteTransactionHash && (
+                  <div className="mt-6 pt-4 border-t border-accent-teal/20">
+                    <p className="text-sm text-foreground/80 mb-2">Vote Verification Proof:</p>
+                    <code className="block bg-background/50 p-2 rounded text-xs font-mono break-all mb-2">
+                      {user.voteTransactionHash}
+                    </code>
+                    <Link to={`/verify-vote?hash=${user.voteTransactionHash}`} target="_blank">
+                      <Button variant="link" className="p-0 h-auto text-accent-teal font-normal underline-offset-4">
+                        Verify on Blockchain &rarr;
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
