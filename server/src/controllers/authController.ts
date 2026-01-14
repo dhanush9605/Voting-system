@@ -182,7 +182,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
             // Send Admin Alert Email (Fire & Forget)
             sendEmail({
-                to: process.env.EMAIL_USER as string,
+                to: (process.env.SENDER_EMAIL || process.env.EMAIL_USER) as string,
                 subject: 'New Voter Registration Alert 🚨',
                 html: `
                     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
