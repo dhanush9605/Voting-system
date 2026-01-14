@@ -5,7 +5,7 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-    port: 587,
+    port: 2525, // Try 2525 for Brevo as 587 timed out
     secure: false, // STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
