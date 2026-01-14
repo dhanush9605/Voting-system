@@ -56,4 +56,7 @@ const UserSchema: Schema = new Schema({
     timestamps: true
 });
 
+// Optimization for Admin Dashboard (Get All Voters)
+UserSchema.index({ role: 1, createdAt: -1 });
+
 export default mongoose.model<IUser>('User', UserSchema);
