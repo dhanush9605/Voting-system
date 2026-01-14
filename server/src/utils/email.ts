@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 2525, // Try 2525 (Alternative) if 587 is blocked
-    secure: false, // use STARTTLS
+    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
