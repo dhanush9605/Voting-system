@@ -59,8 +59,8 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
                 : 'Your verification was rejected. Please contact admin or try again.'
         });
 
-        // Send Email Notification
-        await sendEmail({
+        // Send Email Notification (Fire & Forget)
+        sendEmail({
             to: user.email,
             subject: status === VerificationStatus.VERIFIED ? 'Voter Verification Approved' : 'Verification Status Update',
             html: `
@@ -82,7 +82,7 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
                     <p>Best regards,<br>Voting System Board</p>
                 </div>
             `
-        });
+        }).catch(err => console.error("Verification Email Failed:", err));
 
         res.json({
             message: `User ${status === VerificationStatus.VERIFIED ? 'verified' : 'rejected'} successfully`,

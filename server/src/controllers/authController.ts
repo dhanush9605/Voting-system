@@ -163,8 +163,8 @@ export const registerUser = async (req: Request, res: Response) => {
                 await Notification.insertMany(notifications);
             }
 
-            // Send Welcome Email
-            await sendEmail({
+            // Send Welcome Email (Fire & Forget)
+            sendEmail({
                 to: user.email,
                 subject: 'Welcome to Voting System',
                 html: `
@@ -178,11 +178,11 @@ export const registerUser = async (req: Request, res: Response) => {
                         <p>Best regards,<br>Voting System Team</p>
                     </div>
                 `
-            });
+            }).catch(err => console.error("Welcome Email Failed:", err));
 
-            // Send Admin Alert Email
-            await sendEmail({
-                to: process.env.EMAIL_USER as string, // Requesting admin gets the alert
+            // Send Admin Alert Email (Fire & Forget)
+            sendEmail({
+                to: process.env.EMAIL_USER as string,
                 subject: 'New Voter Registration Alert 🚨',
                 html: `
                     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
@@ -197,7 +197,7 @@ export const registerUser = async (req: Request, res: Response) => {
                         <p>Please log in to the <a href="https://voting2026.vercel.app/admin/login">Admin Dashboard</a> to verify this user.</p>
                     </div>
                 `
-            });
+            }).catch(err => console.error("Admin Alert Email Failed:", err));
 
             await sendTokenResponse(user, 201, res, false); // Registering = Default/No remember me or handle if needed
         } else {
