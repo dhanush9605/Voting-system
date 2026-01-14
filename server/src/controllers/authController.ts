@@ -180,6 +180,25 @@ export const registerUser = async (req: Request, res: Response) => {
                 `
             });
 
+            // Send Admin Alert Email
+            await sendEmail({
+                to: process.env.EMAIL_USER as string, // Requesting admin gets the alert
+                subject: 'New Voter Registration Alert 🚨',
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                        <h2 style="color: #0F766E;">New Voter Registration</h2>
+                        <p>A new user has registered and is awaiting verification.</p>
+                        <ul>
+                            <li><strong>Name:</strong> ${user.name}</li>
+                            <li><strong>Student ID:</strong> ${user.studentId}</li>
+                            <li><strong>Email:</strong> ${user.email}</li>
+                            <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
+                        </ul>
+                        <p>Please log in to the <a href="https://voting2026.vercel.app/admin/login">Admin Dashboard</a> to verify this user.</p>
+                    </div>
+                `
+            });
+
             await sendTokenResponse(user, 201, res, false); // Registering = Default/No remember me or handle if needed
         } else {
             res.status(400).json({ message: 'Invalid user data' });
