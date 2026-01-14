@@ -44,13 +44,15 @@ export const sendEmail = async ({ to, subject, text, html }: EmailOptions) => {
             return;
         }
 
-        const info = await transporter.sendMail({
-            from: `"Voting System" <${process.env.EMAIL_USER}>`,
+        const mailOptions = {
+            from: `"Voting System" <${process.env.SENDER_EMAIL || process.env.EMAIL_USER}>`,
             to,
             subject,
             text,
             html
-        });
+        };
+
+        const info = await transporter.sendMail(mailOptions);
 
         console.log(`📧 Email sent to ${to}: ${info.messageId}`);
         return info;
