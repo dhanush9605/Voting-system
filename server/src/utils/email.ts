@@ -5,7 +5,7 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
+    port: 2525, // Try 2525 (Alternative) if 587 is blocked
     secure: false, // use STARTTLS
     auth: {
         user: process.env.EMAIL_USER,
