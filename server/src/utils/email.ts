@@ -10,7 +10,7 @@ const SMTP_HOST = process.env.SMTP_HOST?.trim() || 'smtp-relay.brevo.com';
 // Create the transporter globally so we don't open a new connection for every email
 const transporter = nodemailer.createTransport({
     host: SMTP_HOST,
-    port: 587,
+    port: 2525,
     secure: false, // true for 465, false for other ports
     auth: {
         user: EMAIL_USER,
