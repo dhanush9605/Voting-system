@@ -16,6 +16,10 @@ import Register from "./pages/Register";
 import PublicResults from "./pages/PublicResults";
 import NotFound from "./pages/NotFound";
 
+// ...
+
+
+
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -25,6 +29,7 @@ import ResultsManagement from "./pages/admin/ResultsManagement";
 
 // Voter pages
 import VoterDashboard from "./pages/voter/VoterDashboard";
+import VoterProfile from "./pages/voter/VoterProfile";
 import VotePage from "./pages/voter/VotePage";
 import FaceVerification from "./pages/FaceVerification";
 import BlockchainVerification from "./pages/BlockchainVerification";
@@ -72,7 +77,7 @@ const App = () => (
               </ProtectedRoute>
             }>
               <Route path="/voter/dashboard" element={<VoterDashboard />} />
-              <Route path="/voter/profile" element={<VoterDashboard />} />
+              <Route path="/voter/profile" element={<VoterProfile />} />
               <Route path="/vote" element={<VotePage />} />
               <Route path="/verify-face" element={<FaceVerification />} />
             </Route>

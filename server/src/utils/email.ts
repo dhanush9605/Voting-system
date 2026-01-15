@@ -3,22 +3,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Create the transporter globally so we don't open a new connection for every email
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-    port: 2525, // Try 2525 for Brevo as 587 timed out
-    secure: false, // STARTTLS
+    port: 587,
+    secure: false, // true for 465, false for other ports
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
     tls: {
         ciphers: 'SSLv3'
-    },
-    connectionTimeout: 10000, // 10 seconds
-    greetingTimeout: 10000,
-    socketTimeout: 10000,
-    debug: true, // show debug output
-    logger: true // log information in console
+    }
 });
 
 // Verify connection configuration
@@ -38,27 +34,29 @@ interface EmailOptions {
 }
 
 export const sendEmail = async ({ to, subject, text, html }: EmailOptions) => {
+    // Trim credentials to avoid whitespace issues
+    const user = process.env.EMAIL_USER?.trim();
+    const pass = process.env.EMAIL_PASS?.trim();
+
+    if (!user || !pass) {
+        console.warn('⚠️ Email credentials missing. Please check .env');
+        throw new Error("Email credentials missing on server.");
+    }
+
+    const mailOptions = {
+        from: `"Voting System" <${process.env.SENDER_EMAIL || user}>`,
+        to,
+        subject,
+        text,
+        html
+    };
+
     try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.warn('⚠️ Email credentials missing. Skipping email send.');
-            return;
-        }
-
-        const mailOptions = {
-            from: `"Voting System" <${process.env.SENDER_EMAIL || process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            text,
-            html
-        };
-
         const info = await transporter.sendMail(mailOptions);
-
         console.log(`📧 Email sent to ${to}: ${info.messageId}`);
         return info;
-    } catch (error) {
-        console.error('❌ Error sending email:', error);
-        // Don't throw, just log. We don't want to break the registration flow if email fails.
-        return null;
+    } catch (error: any) {
+        console.error("❌ Send Mail Failed:", error);
+        throw error; // Rethrow to be handled by controller
     }
 };

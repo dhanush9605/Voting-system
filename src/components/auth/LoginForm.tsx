@@ -302,9 +302,9 @@ export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: 
                                 />
                                 <span className="text-sm text-muted-foreground">Remember me</span>
                             </label>
-                            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                            {/* <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                                 Forgot password?
-                            </Link>
+                            </Link> */}
                         </div>
 
                         {/* Submit button */}

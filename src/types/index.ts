@@ -9,6 +9,8 @@ export interface User {
   studentId?: string;
   role: UserRole;
   avatarUrl?: string;
+  imageUrl?: string;
+  imageHash?: string;
   hasVoted?: boolean;
   verificationStatus?: 'pending' | 'verified' | 'rejected';
   voteTransactionHash?: string;

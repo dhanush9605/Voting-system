@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User, { IUser, UserRole, VerificationStatus } from '../models/User';
@@ -500,3 +501,5 @@ export const verifyFace = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+

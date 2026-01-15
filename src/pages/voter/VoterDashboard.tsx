@@ -41,26 +41,26 @@ const VoterDashboard = () => {
       </div>
 
       {/* Status Card */}
-      <Card className={`border-2 ${isVerified ? 'border-success/30 bg-success/5' :
-        isPending ? 'border-warning/30 bg-warning/5' :
-          'border-destructive/30 bg-destructive/5'
+      <Card className={`border overflow-hidden relative transition-all duration-300 hover:shadow-md ${isVerified ? 'border-success/30 bg-gradient-to-r from-success/10 via-success/5 to-transparent' :
+        isPending ? 'border-warning/30 bg-gradient-to-r from-warning/10 via-warning/5 to-transparent' :
+          'border-destructive/30 bg-gradient-to-r from-destructive/10 via-destructive/5 to-transparent'
         }`}>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 relative z-10">
           <div className="flex items-start gap-4">
-            <div className={`p-3 rounded-full ${isVerified ? 'bg-success/10' :
-              isPending ? 'bg-warning/10' :
-                'bg-destructive/10'
+            <div className={`p-3 rounded-full shadow-sm ${isVerified ? 'bg-success/20 text-success' :
+              isPending ? 'bg-warning/20 text-warning' :
+                'bg-destructive/20 text-destructive'
               }`}>
               {isVerified ? (
-                <CheckCircle className="w-6 h-6 text-success" />
+                <CheckCircle className="w-6 h-6" />
               ) : isPending ? (
-                <Clock className="w-6 h-6 text-warning" />
+                <Clock className="w-6 h-6" />
               ) : (
-                <AlertCircle className="w-6 h-6 text-destructive" />
+                <AlertCircle className="w-6 h-6" />
               )}
             </div>
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-lg font-bold text-foreground">
                 {isVerified ? 'Your account is verified!' :
                   isPending ? 'Verification pending' :
                     'Verification rejected'}
@@ -72,7 +72,7 @@ const VoterDashboard = () => {
               </p>
               {isVerified && !hasVoted && (
                 <Link to="/vote" className="inline-block mt-4">
-                  <Button variant="hero">
+                  <Button variant="hero" className="shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 animate-pulse">
                     <Vote className="w-4 h-4 mr-2" />
                     Cast Your Vote
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -82,7 +82,7 @@ const VoterDashboard = () => {
               {/* Add Verification Link if NOT verified */}
               {!isVerified && (
                 <Link to="/verify-face" className="inline-block mt-4">
-                  <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                  <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:scale-105 transition-transform">
                     <CheckCircle className="w-4 h-4 mr-2" />
                     Verify Identity
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -96,19 +96,19 @@ const VoterDashboard = () => {
 
       {/* Vote Status */}
       {hasVoted && (
-        <Card className="border-2 border-accent-teal/30 bg-accent-teal-light">
+        <Card className="border border-accent-teal/30 bg-gradient-to-r from-accent-teal/10 to-transparent transition-all duration-300 hover:shadow-md">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
-              <div className="p-3 rounded-full bg-accent-teal/10">
-                <CheckCircle className="w-6 h-6 text-accent-teal" />
+              <div className="p-3 rounded-full bg-accent-teal/20 text-accent-teal shadow-sm">
+                <CheckCircle className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-foreground">You have already voted!</h2>
+                <h2 className="text-lg font-bold text-foreground">You have already voted!</h2>
                 <p className="text-muted-foreground mt-1">
-                  Thank you for participating in the election. Your vote has been recorded securely.
+                  Thank you for participating. Your vote is secure on the blockchain.
                 </p>
                 <Link to="/results/public" className="inline-block mt-4">
-                  <Button variant="outline">
+                  <Button variant="outline" className="hover:scale-105 transition-transform">
                     View Results
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
@@ -116,12 +116,12 @@ const VoterDashboard = () => {
 
                 {user?.voteTransactionHash && (
                   <div className="mt-6 pt-4 border-t border-accent-teal/20">
-                    <p className="text-sm text-foreground/80 mb-2">Vote Verification Proof:</p>
-                    <code className="block bg-background/50 p-2 rounded text-xs font-mono break-all mb-2">
+                    <p className="text-sm font-medium text-foreground/80 mb-2">Blockchain Proof:</p>
+                    <code className="block bg-background/50 p-3 rounded-lg border border-border text-xs font-mono break-all mb-3 text-muted-foreground hover:text-foreground transition-colors cursor-help" title="Transaction Hash">
                       {user.voteTransactionHash}
                     </code>
                     <Link to={`/verify-vote?hash=${user.voteTransactionHash}`} target="_blank">
-                      <Button variant="link" className="p-0 h-auto text-accent-teal font-normal underline-offset-4">
+                      <Button variant="link" className="p-0 h-auto text-accent-teal font-medium hover:text-accent-teal-dark underline-offset-4">
                         Verify on Blockchain &rarr;
                       </Button>
                     </Link>
@@ -135,79 +135,86 @@ const VoterDashboard = () => {
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-2 gap-6">
-        <Card>
+        <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 group">
           <CardHeader>
-            <CardTitle className="text-lg">Your Profile</CardTitle>
+            <CardTitle className="text-lg group-hover:text-primary transition-colors">Your Profile</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-border">
+            <div className="space-y-4">
+              <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Name</span>
                 <span className="font-medium">{user?.name}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-border">
+              <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Student ID</span>
                 <span className="font-medium">{user?.studentId}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-border">
+              <div className="flex justify-between py-2 border-b border-border/50">
                 <span className="text-muted-foreground">Email</span>
                 <span className="font-medium">{user?.email || '-'}</span>
               </div>
-              <div className="flex justify-between py-2">
+              <div className="flex justify-between items-center py-2">
                 <span className="text-muted-foreground">Status</span>
-                <span className={`font-medium capitalize ${isVerified ? 'text-success' : isPending ? 'text-warning' : 'text-destructive'
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${isVerified ? 'bg-success/15 text-success' : isPending ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive'
                   }`}>
                   {user?.verificationStatus}
                 </span>
               </div>
             </div>
-            <Link to="/voter/profile" className="block mt-4">
-              <Button variant="outline" className="w-full">Edit Profile</Button>
+            <Link to="/voter/profile" className="block mt-6">
+              <Button variant="outline" className="w-full group-hover:border-primary/50 group-hover:bg-primary/5 transition-all">Edit Profile</Button>
             </Link>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/20 group">
           <CardHeader>
-            <CardTitle className="text-lg">Election Info</CardTitle>
+            <CardTitle className="text-lg group-hover:text-primary transition-colors">Election Info</CardTitle>
           </CardHeader>
           <CardContent>
             {election ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-muted/50 rounded-lg">
-                  <h3 className="font-medium text-foreground mb-2">{election.title}</h3>
-                  <p className="text-sm text-muted-foreground">
+              <div className="space-y-5">
+                <div className="p-4 bg-muted/40 rounded-xl border border-border/50">
+                  <h3 className="font-bold text-foreground mb-1">{election.title}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2">
                     {election.description}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Start Date</span>
-                    <p className="font-medium">
+                  <div className="p-3 bg-background rounded-lg border border-border/50 text-center">
+                    <span className="text-muted-foreground block text-xs mb-1">Start Date</span>
+                    <p className="font-semibold">
                       {new Date(election.startDate).toLocaleDateString()}
                     </p>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">End Date</span>
-                    <p className="font-medium">
+                  <div className="p-3 bg-background rounded-lg border border-border/50 text-center">
+                    <span className="text-muted-foreground block text-xs mb-1">End Date</span>
+                    <p className="font-semibold">
                       {new Date(election.endDate).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
 
                 {/* Status Indicator */}
-                <div className="text-center text-sm font-medium">
+                <div className="text-center">
                   {new Date() < new Date(election.startDate) ? (
-                    <span className="text-warning">Election has not started yet</span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-warning/10 text-warning text-xs font-medium">
+                      <Clock className="w-3 h-3 mr-1" /> Not Started
+                    </span>
                   ) : new Date() > new Date(election.endDate) ? (
-                    <span className="text-destructive">Election has ended</span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
+                      <AlertCircle className="w-3 h-3 mr-1" /> Ended
+                    </span>
                   ) : (
-                    <span className="text-success">Election is Live</span>
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-success/10 text-success text-xs font-medium animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-success mr-2"></span>
+                      Voting is Live
+                    </span>
                   )}
                 </div>
 
                 <Link to="/results/public">
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full group-hover:border-primary/50 group-hover:bg-primary/5 transition-all">
                     View Live Results
                   </Button>
                 </Link>

@@ -51,7 +51,7 @@ const UserSchema: Schema = new Schema({
     imageHash: { type: String },
     imageUrl: { type: String },
     voteTransactionHash: { type: String },
-    refreshToken: { type: String },
+    refreshToken: { type: String }
 }, {
     timestamps: true
 });

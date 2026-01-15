@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Vote, BarChart3, Trophy, Users, Clock, TrendingUp } from "lucide-react";
+import { Vote, BarChart3, Trophy, Users, Clock, TrendingUp, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from "recharts";
 import api from "@/lib/api";
+import confetti from "canvas-confetti";
 
 const PublicResults = () => {
   const [resultsData, setResultsData] = useState<any[]>([]);
@@ -34,6 +35,24 @@ const PublicResults = () => {
 
     fetchResults();
   }, []);
+
+  useEffect(() => {
+    if (winner) {
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+      const interval: any = setInterval(function () {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) return clearInterval(interval);
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 250);
+      return () => clearInterval(interval);
+    }
+  }, [winner]);
 
   if (loading) {
     return (
@@ -113,27 +132,33 @@ const PublicResults = () => {
           </div>
 
           {/* Winner Card */}
-          {/* Winner Card */}
-          <Card className={`border-2 ${winner ? 'border-accent-coral/30 bg-gradient-to-br from-accent-coral-light to-card' : 'border-muted bg-card'}`}>
-            <CardContent className="py-8">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center ${winner ? 'bg-accent-coral' : 'bg-muted'}`}>
-                  <Trophy className={`w-12 h-12 ${winner ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+          <Card className={`border-0 shadow-xl overflow-hidden relative transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl hover:brightness-110 cursor-default ${winner ? 'bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600' : 'border-muted bg-card'}`}>
+            {winner && <div className="absolute inset-0 bg-white/10 pattern-grid-lg opacity-20" />}
+            <CardContent className="py-10 relative z-10">
+              <div className="flex flex-col md:flex-row items-center gap-8 justify-center">
+                <div className={`w-32 h-32 rounded-full flex items-center justify-center shadow-lg border-4 border-white/50 animate-bounce ${winner ? 'bg-white/20 backdrop-blur-sm' : 'bg-muted'}`}>
+                  {winner ? (
+                    <PartyPopper className="w-16 h-16 text-yellow-900 drop-shadow-sm" />
+                  ) : (
+                    <Trophy className="w-12 h-12 text-muted-foreground" />
+                  )}
                 </div>
                 <div className="text-center md:text-left">
-                  <p className={`text-sm font-medium mb-2 ${winner ? 'text-accent-coral' : 'text-muted-foreground'}`}>
-                    {winner ? 'Winner' : 'Election Status'}
+                  <p className={`text-base font-black uppercase tracking-[0.2em] mb-3 drop-shadow-sm ${winner ? 'text-yellow-900' : 'text-muted-foreground'}`}>
+                    {winner ? '✨ Congratulations! ✨' : 'Election Status'}
                   </p>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                  <h2 className={`text-5xl md:text-6xl font-black mb-2 tracking-tight ${winner ? 'text-white drop-shadow-md' : 'text-foreground'}`}>
                     {winner ? winner.name : (totalVotes === 0 ? "No Votes Cast" : (isTie ? "It's a Tie!" : "No Verified Winner"))}
                   </h2>
-                  <p className="text-primary font-medium">
+                  <p className={`text-2xl font-bold ${winner ? 'text-yellow-900' : 'text-primary'}`}>
                     {winner ? winner.party : (totalVotes === 0 ? "Waiting for votes..." : (isTie ? "Multiple candidates tied for first place" : ""))}
                   </p>
                   {winner && (
-                    <p className="text-muted-foreground mt-2">
-                      {winner.votes} votes ({totalVotes > 0 ? ((winner.votes / totalVotes) * 100).toFixed(1) : 0}%)
-                    </p>
+                    <div className="mt-4 inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-lg border border-white/30">
+                      <p className="text-yellow-950 font-semibold">
+                        🏆 Secured {winner.votes} votes ({totalVotes > 0 ? ((winner.votes / totalVotes) * 100).toFixed(1) : 0}%)
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -142,32 +167,32 @@ const PublicResults = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
+            <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/20">
               <CardContent className="py-6 text-center">
-                <Users className="w-8 h-8 text-accent-teal mx-auto mb-2" />
+                <Users className="w-8 h-8 text-accent-teal mx-auto mb-2 transition-transform duration-300 group-hover:scale-110" />
                 <p className="text-2xl font-bold">{totalVotes}</p>
                 <p className="text-sm text-muted-foreground">Total Votes</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/20">
               <CardContent className="py-6 text-center">
-                <TrendingUp className="w-8 h-8 text-accent-coral mx-auto mb-2" />
+                <TrendingUp className="w-8 h-8 text-accent-coral mx-auto mb-2 transition-transform duration-300 group-hover:scale-110" />
                 <p className="text-2xl font-bold">
                   {winner ? (totalVotes > 0 ? ((winner.votes / totalVotes) * 100).toFixed(1) : 0) : (totalVotes > 0 && resultsData.length > 0 ? ((resultsData[0].votes / totalVotes) * 100).toFixed(1) : 0)}%
                 </p>
                 <p className="text-sm text-muted-foreground">{winner ? 'Winner Share' : 'Top Share'}</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/20">
               <CardContent className="py-6 text-center">
-                <Vote className="w-8 h-8 text-accent-purple mx-auto mb-2" />
+                <Vote className="w-8 h-8 text-accent-purple mx-auto mb-2 transition-transform duration-300 group-hover:scale-110" />
                 <p className="text-2xl font-bold">{resultsData.length}</p>
                 <p className="text-sm text-muted-foreground">Candidates</p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-primary/20">
               <CardContent className="py-6 text-center">
-                <BarChart3 className="w-8 h-8 text-accent-pink mx-auto mb-2" />
+                <BarChart3 className="w-8 h-8 text-accent-pink mx-auto mb-2 transition-transform duration-300 group-hover:scale-110" />
                 <p className="text-2xl font-bold">{resultsData.find((r: any) => r.name === 'Abstain')?.votes || 0}</p>
                 <p className="text-sm text-muted-foreground">Abstentions</p>
               </CardContent>
@@ -177,7 +202,7 @@ const PublicResults = () => {
           {/* Charts */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Bar Chart */}
-            <Card>
+            <Card className="transition-all duration-300 hover:shadow-lg hover:border-primary/20">
               <CardHeader>
                 <CardTitle>Vote Distribution</CardTitle>
               </CardHeader>
@@ -214,7 +239,7 @@ const PublicResults = () => {
             </Card>
 
             {/* Pie Chart */}
-            <Card>
+            <Card className="transition-all duration-300 hover:shadow-lg hover:border-primary/20">
               <CardHeader>
                 <CardTitle>Vote Share</CardTitle>
               </CardHeader>
@@ -259,7 +284,7 @@ const PublicResults = () => {
           </div>
 
           {/* Detailed Results Table */}
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg hover:border-primary/20">
             <CardHeader>
               <CardTitle>Complete Results</CardTitle>
             </CardHeader>
@@ -278,7 +303,7 @@ const PublicResults = () => {
                   </thead>
                   <tbody>
                     {resultsData.map((result, index) => (
-                      <tr key={index} className="border-b border-border last:border-0">
+                      <tr key={index} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors duration-200">
                         <td className="py-4 px-4">
                           <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${index === 0 ? 'bg-accent-coral text-primary-foreground' : 'bg-muted text-muted-foreground'
                             }`}>
