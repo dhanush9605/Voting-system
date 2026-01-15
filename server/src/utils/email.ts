@@ -3,14 +3,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const EMAIL_USER = process.env.EMAIL_USER?.trim();
+const EMAIL_PASS = process.env.EMAIL_PASS?.trim();
+const SMTP_HOST = process.env.SMTP_HOST?.trim() || 'smtp-relay.brevo.com';
+
 // Create the transporter globally so we don't open a new connection for every email
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+    host: SMTP_HOST,
     port: 587,
     secure: false, // true for 465, false for other ports
     auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
+        user: EMAIL_USER,
+        pass: EMAIL_PASS
     },
     tls: {
         ciphers: 'SSLv3'
