@@ -19,6 +19,7 @@ export interface IUser extends Document {
     role: UserRole;
     studentId?: string;
     verificationStatus?: VerificationStatus;
+    isFaceVerified?: boolean;
     hasVoted: boolean;
     loginAttempts: number;
     lockUntil?: Date;
@@ -45,6 +46,7 @@ const UserSchema: Schema = new Schema({
         enum: Object.values(VerificationStatus),
         default: VerificationStatus.PENDING
     },
+    isFaceVerified: { type: Boolean, default: false },
     hasVoted: { type: Boolean, default: false },
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date },

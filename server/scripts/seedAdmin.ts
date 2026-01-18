@@ -13,7 +13,11 @@ const seedAdmin = async () => {
         console.log('MongoDB Connected');
 
         const email = 'admin@verification.com';
-        const password = 'AdminPass123';
+        const password = process.env.ADMIN_PASSWORD || 'AdminPass123';
+
+        if (!process.env.ADMIN_PASSWORD) {
+            console.warn('Warning: using default hardcoded admin password. Please set ADMIN_PASSWORD in .env');
+        }
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const adminData = {

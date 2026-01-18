@@ -24,7 +24,9 @@ const VoterDashboard = () => {
     fetchElection();
   }, []);
 
-  const isVerified = user?.verificationStatus === 'verified';
+  const isAdminVerified = user?.verificationStatus === 'verified';
+  const isFaceVerified = !!user?.isFaceVerified;
+  const isEligibleToVote = isAdminVerified && isFaceVerified;
   const isPending = user?.verificationStatus === 'pending';
   const hasVoted = user?.hasVoted;
 
@@ -41,19 +43,19 @@ const VoterDashboard = () => {
       </div>
 
       {/* Status Card */}
-      <Card className={`border overflow-hidden relative transition-all duration-300 hover:shadow-md ${isVerified ? 'border-success/30 bg-gradient-to-r from-success/10 via-success/5 to-transparent' :
-        isPending ? 'border-warning/30 bg-gradient-to-r from-warning/10 via-warning/5 to-transparent' :
+      <Card className={`border overflow-hidden relative transition-all duration-300 hover:shadow-md ${isEligibleToVote ? 'border-success/30 bg-gradient-to-r from-success/10 via-success/5 to-transparent' :
+        (isPending || !isFaceVerified) ? 'border-warning/30 bg-gradient-to-r from-warning/10 via-warning/5 to-transparent' :
           'border-destructive/30 bg-gradient-to-r from-destructive/10 via-destructive/5 to-transparent'
         }`}>
         <CardContent className="pt-6 relative z-10">
           <div className="flex items-start gap-4">
-            <div className={`p-3 rounded-full shadow-sm ${isVerified ? 'bg-success/20 text-success' :
-              isPending ? 'bg-warning/20 text-warning' :
+            <div className={`p-3 rounded-full shadow-sm ${isEligibleToVote ? 'bg-success/20 text-success' :
+              (isPending || !isFaceVerified) ? 'bg-warning/20 text-warning' :
                 'bg-destructive/20 text-destructive'
               }`}>
-              {isVerified ? (
+              {isEligibleToVote ? (
                 <CheckCircle className="w-6 h-6" />
-              ) : isPending ? (
+              ) : (isPending || !isFaceVerified) ? (
                 <Clock className="w-6 h-6" />
               ) : (
                 <AlertCircle className="w-6 h-6" />
@@ -61,16 +63,18 @@ const VoterDashboard = () => {
             </div>
             <div className="flex-1">
               <h2 className="text-lg font-bold text-foreground">
-                {isVerified ? 'Your account is verified!' :
-                  isPending ? 'Verification pending' :
-                    'Verification rejected'}
+                {isEligibleToVote ? 'Your account is ready for voting!' :
+                  !isFaceVerified ? 'Face verification needed' :
+                    isPending ? 'Waiting for admin approval' :
+                      'Verification rejected'}
               </h2>
               <p className="text-muted-foreground mt-1">
-                {isVerified ? 'You are eligible to vote in the current election.' :
-                  isPending ? 'Your registration is being reviewed by an administrator.' :
-                    'Please contact support for more information.'}
+                {isEligibleToVote ? 'You are fully verified and eligible to cast your vote.' :
+                  !isFaceVerified ? 'Please complete your face verification to proceed.' :
+                    isPending ? 'Your face is verified. Now waiting for an administrator to approve your profile.' :
+                      'Your registration was rejected. Please contact support.'}
               </p>
-              {isVerified && !hasVoted && (
+              {isEligibleToVote && !hasVoted && (
                 <Link to="/vote" className="inline-block mt-4">
                   <Button variant="hero" className="shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 animate-pulse">
                     <Vote className="w-4 h-4 mr-2" />
@@ -79,15 +83,21 @@ const VoterDashboard = () => {
                   </Button>
                 </Link>
               )}
-              {/* Add Verification Link if NOT verified */}
-              {!isVerified && (
+              {/* Add Verification Link if NOT face verified */}
+              {!isFaceVerified && !hasVoted && (
                 <Link to="/verify-face" className="inline-block mt-4">
                   <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:scale-105 transition-transform">
                     <CheckCircle className="w-4 h-4 mr-2" />
-                    Verify Identity
+                    Verify Face Identity
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
+              )}
+              {isFaceVerified && !isAdminVerified && !hasVoted && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-warning font-medium">
+                  <Clock className="w-4 h-4" />
+                  Face verified. Awaiting admin approval...
+                </div>
               )}
             </div>
           </div>
@@ -154,8 +164,14 @@ const VoterDashboard = () => {
                 <span className="font-medium">{user?.email || '-'}</span>
               </div>
               <div className="flex justify-between items-center py-2">
-                <span className="text-muted-foreground">Status</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${isVerified ? 'bg-success/15 text-success' : isPending ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive'
+                <span className="text-muted-foreground">Face Status</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${isFaceVerified ? 'bg-success/15 text-success' : 'bg-warning/15 text-warning'}`}>
+                  {isFaceVerified ? 'Verified' : 'Pending'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-muted-foreground">Admin Status</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${isAdminVerified ? 'bg-success/15 text-success' : isPending ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive'
                   }`}>
                   {user?.verificationStatus}
                 </span>

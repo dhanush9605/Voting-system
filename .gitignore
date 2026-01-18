@@ -26,3 +26,7 @@ dist-ssr
 
 # Environment Variables
 .env
+
+# Code Dumps
+full_project_code.txt
+project_code_dump.txt

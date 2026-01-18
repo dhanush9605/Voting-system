@@ -13,6 +13,7 @@ export interface User {
   imageHash?: string;
   hasVoted?: boolean;
   verificationStatus?: 'pending' | 'verified' | 'rejected';
+  isFaceVerified?: boolean;
   voteTransactionHash?: string;
   createdAt: string;
 }

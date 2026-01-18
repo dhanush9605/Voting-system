@@ -68,6 +68,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
         email: user.email,
         role: user.role,
         verificationStatus: user.verificationStatus,
+        isFaceVerified: user.isFaceVerified,
         hasVoted: user.hasVoted,
         imageHash: user.imageHash,
         imageUrl: user.imageUrl,
@@ -410,6 +411,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             email: user.email,
             role: user.role,
             verificationStatus: user.verificationStatus,
+            isFaceVerified: user.isFaceVerified,
             hasVoted: user.hasVoted,
             imageUrl: user.imageUrl,
             voteTransactionHash: user.voteTransactionHash
@@ -461,8 +463,8 @@ export const verifyFace = async (req: AuthRequest, res: Response) => {
             return;
         }
 
-        if (user.verificationStatus === VerificationStatus.VERIFIED) {
-            res.status(200).json({ message: 'User is already verified', verified: true });
+        if (user.isFaceVerified) {
+            res.status(200).json({ message: 'User face is already verified', verified: true });
             return;
         }
 
@@ -486,7 +488,7 @@ export const verifyFace = async (req: AuthRequest, res: Response) => {
         const THRESHOLD = 0.55;
 
         if (distance < THRESHOLD) {
-            user.verificationStatus = VerificationStatus.VERIFIED;
+            user.isFaceVerified = true;
             await user.save();
             res.json({ message: 'Face verified successfully', verified: true, distance });
         } else {
