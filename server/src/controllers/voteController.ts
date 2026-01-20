@@ -79,33 +79,36 @@ export const castVote = async (req: AuthRequest, res: Response) => {
         if (candidateId !== 'abstain') {
             try {
                 const { contract } = await import('../config/blockchain');
-                
+
                 if (!contract) {
-                     throw new Error("Blockchain not configured");
+                    throw new Error("Blockchain not configured");
                 }
 
-                console.log(`🔗 Submitting vote for ${candidateId} to blockchain...`);
+                // Sanitize ID
+                const safeCandidateId = String(candidateId).trim();
+                console.log(`🔗 Submitting vote for '${safeCandidateId}' (Original: '${candidateId}') to blockchain...`);
+
                 // Call the smart contract
-                const tx = await contract.vote(candidateId);
+                const tx = await contract.vote(safeCandidateId);
                 transactionHash = tx.hash;
                 console.log(`✅ Vote submitted! Tx Hash: ${tx.hash}`);
 
             } catch (bcError: any) {
                 console.error("⚠️ Blockchain sync failed:", bcError);
-                
+
                 // --- ROLLBACK MONGODB ---
                 console.log("🔄 Rolling back MongoDB changes...");
-                
+
                 // 1. Revert user status
                 user.hasVoted = false;
                 await user.save();
 
                 // 2. Decrement candidate vote count
                 await Candidate.findByIdAndUpdate(candidateId, { $inc: { voteCount: -1 } });
-                
-                return res.status(500).json({ 
+
+                return res.status(500).json({
                     message: 'Blockchain transaction failed. Please try again.',
-                    error: bcError.message 
+                    error: bcError.message
                 });
             }
         } else {
@@ -129,14 +132,14 @@ export const castVote = async (req: AuthRequest, res: Response) => {
         // If we already committed (line 72), this catch block catches errors from the post-commit phase 
         // (like the blockchain logic above, BUT we handled that with its own try/catch).
         // So this main catch is for the initial DB logic.
-        
+
         if (session.inTransaction()) {
             await session.abortTransaction();
         }
         session.endSession();
         console.error('Vote Error:', error);
         if (!res.headersSent) {
-             res.status(500).json({ message: 'Voting failed. Please try again.' });
+            res.status(500).json({ message: 'Voting failed. Please try again.' });
         }
     }
 }
