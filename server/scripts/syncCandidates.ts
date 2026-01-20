@@ -34,30 +34,20 @@ const syncCandidates = async () => {
             try {
                 // Check if candidate already exists on chain
                 // The contract has `candidates(string id)` mapping but it returns a struct. 
-                // We can check if the ID is in `candidateIds` via `getAllCandidates` or just try to add.
-                // Our contract's `addCandidate` checks `if (bytes(candidates[_id].id).length == 0)` internally!
-                // So we can just call addCandidate. If it exists, it will overwrite/update (or redundant event).
-                // Actually, reading the contract:
-                // `if (bytes(candidates[_id].id).length == 0) { candidateIds.push(_id); }`
-                // `candidates[_id] = Candidate(_id, _name, 0);`
-                // So it UPSERTS. This is safe to run multiple times.
-
-                console.log(`Sending transaction to add/update candidate...`);
-                // Note: _id is ObjectId, need toString()
-                const tx = await contract.addCandidate(candidate._id.toString(), candidate.name);
-                console.log(`Tx sent: ${tx.hash}`);
-                console.log(`Waiting for confirmation...`);
-                const receipt = await tx.wait();
-                console.log(`✅ Synced! Block: ${receipt.blockNumber}`);
-
-            } catch (err: any) {
-                console.error(`❌ Failed to sync ${candidate.name}:`, err.message);
+                const tx = await contract.addCandidate(
+                    candidate._id.toString(),
+                    candidate.name
+                );
+                console.log(`Transaction sent: ${tx.hash}`);
+                await tx.wait();
+                console.log(`✅ Synced: ${candidate.name}`);
+            } catch (error: any) {
+                console.error(`❌ Failed to sync ${candidate.name}:`, error.message);
             }
         }
 
-        console.log("\n___________________________________");
         console.log("🎉 Sync Process Complete");
-
+        process.exit(0);
     } catch (error) {
         console.error("Fatal Error:", error);
     } finally {

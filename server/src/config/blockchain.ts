@@ -15,7 +15,8 @@ const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS; // We will fill this afte
 const CONTRACT_ABI = [
     "function vote(string memory _candidateId) public",
     "function addCandidate(string memory _id, string memory _name) public",
-    "function getAllCandidates() public view returns (tuple(string id, string name, uint256 voteCount)[])"
+    "function getAllCandidates() public view returns (tuple(string id, string name, uint256 voteCount)[])",
+    "function candidates(string memory) public view returns (string id, string name, uint256 voteCount)"
 ];
 
 let contract: ethers.Contract | null = null;

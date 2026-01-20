@@ -11,12 +11,17 @@ const verify = async () => {
         return;
     }
     try {
-        console.log("Fetching candidates from blockchain...");
-        const candidates = await contract.getAllCandidates();
-        console.log(`Found ${candidates.length} candidates on blockchain.`);
-        candidates.forEach((c: any) => {
-            console.log(`- ${c.name} (${c.id}) - Votes: ${c.voteCount}`);
-        });
+        console.log("Checking specific candidate: 693c5cc74db102478e5877e7");
+        // candidates returns (id, name, voteCount)
+        const c = await contract.candidates("693c5cc74db102478e5877e7");
+        console.log(`Result: ID=${c[0]}, Name=${c[1]}, Votes=${c[2]}`);
+
+        if (c[0] === "693c5cc74db102478e5877e7") {
+            console.log("✅ Candidate FOUND on blockchain!");
+        } else {
+            console.log("❌ Candidate NOT found (empty struct returned)");
+        }
+
     } catch (e: any) {
         console.log("Verification Error:", e.message);
     }
