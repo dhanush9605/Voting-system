@@ -171,13 +171,15 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Mobile toggle */}
-      <button
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-[60] p-2 bg-background/80 backdrop-blur-lg rounded-xl shadow-xl border border-border/50 ring-1 ring-white/10"
-      >
-        {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+      {/* Mobile toggle - Hidden when sidebar is open to remove 'close' X as requested */}
+      {!isMobileOpen && (
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="lg:hidden fixed top-4 left-4 z-[60] p-2 bg-background/80 backdrop-blur-lg rounded-xl shadow-xl border border-border/50 ring-1 ring-white/10"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
 
       {/* Mobile overlay */}
       {isMobileOpen && (

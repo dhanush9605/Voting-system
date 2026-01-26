@@ -6,7 +6,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { SITE_NAME } from "@/lib/site-config";
 import MeshGradientBackground from "@/components/MeshGradientBackground";
 import IntroAnimation from "@/components/IntroAnimation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useScroll, useMotionValueEvent } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 // Module-level variable to track intro state across navigation
 let hasSeenIntro = false;
@@ -37,6 +39,21 @@ const Landing = () => {
     hasSeenIntro = true;
   };
 
+  const { scrollY } = useScroll();
+  const [headerVisible, setHeaderVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    if (latest < 50) {
+      setHeaderVisible(true);
+    } else if (latest > lastScrollY && latest > 100) {
+      setHeaderVisible(false);
+    } else if (latest < lastScrollY) {
+      setHeaderVisible(true);
+    }
+    setLastScrollY(latest);
+  });
+
   return (
     <>
       <AnimatePresence>
@@ -49,7 +66,12 @@ const Landing = () => {
           <MeshGradientBackground />
 
           {/* Navigation - Transparent */}
-          <header className="fixed top-0 w-full z-50 bg-transparent backdrop-blur-none border-none transition-all duration-300">
+          <header
+            className={cn(
+              "fixed top-0 w-full z-50 bg-background/0 backdrop-blur-none border-none transition-all duration-500 ease-in-out",
+              !headerVisible ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+            )}
+          >
             <div className="container mx-auto px-6 h-20 flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2 group">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
@@ -626,7 +648,7 @@ const Landing = () => {
           </main>
 
           {/* Footer */}
-          <footer className="relative z-10 py-12 border-t border-border/40 bg-secondary/5">
+          <footer className="relative z-10 py-12">
             <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-md shadow-blue-500/20">
