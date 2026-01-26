@@ -58,17 +58,17 @@ const Landing = () => {
                 <span className="font-bold text-lg tracking-tight text-foreground group-hover:opacity-80 transition-opacity">{SITE_NAME}</span>
               </Link>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-4">
                 <Link to="/login">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="ghost" size="sm" className="hidden md:inline-flex font-medium text-muted-foreground hover:text-foreground">
+                    <Button variant="ghost" size="sm" className="font-medium text-muted-foreground hover:text-foreground px-2 sm:px-4">
                       Sign In
                     </Button>
                   </motion.div>
                 </Link>
                 <Link to="/register">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button size="sm" className="font-semibold px-6 bg-foreground text-background hover:bg-foreground/90 shadow-lg hover:shadow-xl transition-all">Get Started</Button>
+                    <Button size="sm" className="font-semibold px-4 sm:px-6 bg-foreground text-background hover:bg-foreground/90 shadow-lg hover:shadow-xl transition-all">Get Started</Button>
                   </motion.div>
                 </Link>
               </div>
@@ -102,7 +102,7 @@ const Landing = () => {
                     Secure Election Protocol v2.0
                   </motion.div>
 
-                  <h1 className="font-space text-4xl sm:text-5xl md:text-7xl lg:text-[7rem] font-bold tracking-tighter leading-[1.1] md:leading-[1] mb-6 md:mb-12 text-center">
+                  <h1 className="font-space text-6xl sm:text-7xl md:text-8xl lg:text-[9rem] font-bold tracking-tighter leading-[0.9] sm:leading-[0.95] md:leading-[1] mb-6 md:mb-12 text-center">
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}

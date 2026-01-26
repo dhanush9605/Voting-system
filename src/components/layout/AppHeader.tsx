@@ -31,19 +31,20 @@ export function AppHeader() {
   return (
     <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm px-4 md:px-6 flex items-center justify-between gap-4">
       {/* Search */}
-      <div className="flex-1 max-w-md ml-12 lg:ml-0">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      {/* Search - Margin on mobile to accommodate sidebar toggle */}
+      <div className="flex-1 sm:flex-initial w-full sm:max-w-md ml-14 lg:ml-0">
+        <div className="relative group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <input
             type="text"
             placeholder="Search..."
-            className="w-full h-10 pl-10 pr-4 bg-secondary/50 border-0 rounded-full text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full h-9 sm:h-10 pl-9 sm:pl-10 pr-4 bg-secondary/40 border border-transparent rounded-full text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-background focus:border-primary/20 transition-all"
           />
         </div>
       </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1 sm:gap-3">
         {/* Notifications */}
         <NotificationsMenu />
 
