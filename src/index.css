@@ -1,4 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Unbounded:wght@400;700;900&display=swap');
+
+.font-space {
+  font-family: 'Unbounded', sans-serif !important;
+  text-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
+  /* Visual indicator */
+}
 
 @tailwind base;
 @tailwind components;
@@ -6,81 +12,74 @@
 
 @layer base {
   :root {
-    /* Core palette - Light mint/sage theme */
-    --background: 150 30% 95%;
-    --foreground: 220 20% 15%;
+    /* Core palette - Premium Monochrome */
+    --background: 0 0% 100%;
+    /* Pure White */
+    --foreground: 240 10% 3.9%;
+    /* #09090b Obsidian */
 
     /* Card surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 15%;
+    --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 15%;
+    --popover-foreground: 240 10% 3.9%;
 
-    /* Primary - Teal/Cyan accent */
-    --primary: 170 60% 35%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Obsidian Black */
+    --primary: 240 10% 3.9%;
+    --primary-foreground: 0 0% 98%;
+    /* White text */
 
-    /* Secondary - Light sage */
-    --secondary: 150 25% 90%;
-    --secondary-foreground: 220 20% 15%;
+    /* Secondary - Light Cool Grey */
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
     /* Muted surfaces */
-    --muted: 150 20% 92%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    /* Mid-tone Grey */
 
-    /* Accent cards - Colorful gradients */
-    --accent: 170 55% 45%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent */
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
-    /* Accent variations for stat cards */
-    --accent-coral: 12 85% 65%;
-    --accent-coral-light: 12 90% 92%;
-    --accent-teal: 170 55% 50%;
-    --accent-teal-light: 170 60% 92%;
-    --accent-pink: 330 70% 65%;
-    --accent-pink-light: 330 75% 92%;
-    --accent-purple: 260 60% 65%;
-    --accent-purple-light: 260 65% 94%;
-    --accent-green: 150 50% 45%;
-    --accent-green-light: 150 55% 92%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
-    /* Status colors */
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 150 60% 40%;
-    --success-foreground: 0 0% 100%;
-    --warning: 40 90% 55%;
-    --warning-foreground: 220 20% 15%;
+    /* Borders and inputs - Subtle Grey */
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
 
-    /* Borders and inputs */
-    --border: 150 20% 88%;
-    --input: 150 20% 88%;
-    --ring: 170 60% 35%;
-
+    /* Pill Shapes - Standard */
     --radius: 0.75rem;
 
-    /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 15% 40%;
-    --sidebar-primary: 170 60% 35%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 150 30% 95%;
-    --sidebar-accent-foreground: 220 20% 15%;
-    --sidebar-border: 150 20% 90%;
-    --sidebar-ring: 170 60% 35%;
+    /* Sidebar - Inverted for contrast */
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 10% 3.9%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    /* Dark Grey Accent */
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 240 4.9% 83.9%;
 
     /* Shadows */
     --shadow-soft: 0 2px 8px -2px rgba(0, 0, 0, 0.08);
     --shadow-card: 0 4px 16px -4px rgba(0, 0, 0, 0.1);
     --shadow-elevated: 0 8px 24px -8px rgba(0, 0, 0, 0.12);
 
-    /* Chart colors */
-    --chart-1: 170 55% 50%;
-    --chart-2: 12 85% 65%;
-    --chart-3: 260 60% 65%;
-    --chart-4: 330 70% 65%;
-    --chart-5: 40 90% 55%;
+    /* Chart Accents */
+    --accent-teal: 173 80% 40%;
+    --accent-coral: 12 85% 65%;
+    --accent-purple: 265 80% 65%;
+    --accent-pink: 325 80% 60%;
+
+    --accent-teal-light: 173 80% 95%;
+    --accent-coral-light: 12 85% 97%;
+    --accent-purple-light: 265 80% 96%;
+    --accent-pink-light: 325 80% 96%;
   }
 
   .dark {
@@ -120,6 +119,12 @@
     --sidebar-accent-foreground: 150 20% 95%;
     --sidebar-border: 220 20% 18%;
     --sidebar-ring: 170 55% 50%;
+
+    /* Chart Accents - Dark Mode */
+    --accent-teal: 173 70% 50%;
+    --accent-coral: 12 85% 70%;
+    --accent-purple: 265 80% 75%;
+    --accent-pink: 325 80% 70%;
   }
 }
 
@@ -133,12 +138,18 @@
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-semibold tracking-tight;
   }
 }
 
 @layer components {
+
   /* Stat card variants */
   .stat-card {
     @apply rounded-xl p-5 relative overflow-hidden transition-all duration-300;
@@ -166,8 +177,9 @@
   }
 
   /* Gradient backgrounds */
+  /* Gradient backgrounds - Premium Monochrome */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(170 70% 45%) 100%);
+    background: linear-gradient(135deg, hsl(240 10% 3.9%) 0%, hsl(240 10% 10%) 100%);
   }
 
   .gradient-coral {
@@ -175,7 +187,8 @@
   }
 
   .gradient-teal {
-    background: linear-gradient(135deg, hsl(var(--accent-teal)) 0%, hsl(180 60% 55%) 100%);
+    background: linear-gradient(135deg, hsl(240 4.8% 90%) 0%, hsl(240 4.8% 80%) 100%);
+    /* Light Grey */
   }
 
   .gradient-pink {
@@ -213,29 +226,159 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { 
+    from {
       opacity: 0;
       transform: translateY(20px);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: translateY(0);
     }
   }
 
   @keyframes scaleIn {
-    from { 
+    from {
       opacity: 0;
       transform: scale(0.95);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  /* Blob Animation */
+  @keyframes blob {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+
+    33% {
+      transform: translate(30px, -50px) scale(1.1);
+    }
+
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
+
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+  }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  /* Text Shimmer Effect */
+  @keyframes shimmer {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    100% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-text-shimmer {
+    background: linear-gradient(to right,
+        #000000 20%,
+        #a1a1aa 40%,
+        #000000 60%,
+        #000000 80%);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+    /* Faster speed */
+  }
+
+  /* Blur In Animation (Cinematic) */
+  @keyframes blur-in {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+      filter: blur(10px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  .animate-blur-in {
+    animation: blur-in 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  }
+
+  /* Ambient Grain Texture */
+  .bg-grain {
+    position: relative;
+  }
+
+  .bg-grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* Noise Pattern */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.15;
+    /* Increased opacity for visibility */
+    mix-blend-mode: multiply;
+    /* Better for white background */
+  }
+
+  /* Magnetic / Heavy Physics Hover */
+  .hover-magnetic {
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+    will-change: transform;
+  }
+
+  .hover-magnetic:hover {
+    transform: translateY(-6px) scale(1.05) !important;
+    /* Force noticeable lift */
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .hover-magnetic:active {
+    transform: translateY(0) scale(0.95) !important;
+    transition: transform 0.1s !important;
+  }
+}
+
+@layer utilities {
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
+  .delay-500 {
+    animation-delay: 500ms;
   }
 }

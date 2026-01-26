@@ -71,7 +71,7 @@ const PublicResults = () => {
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                 <Vote className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-xl text-foreground">Let's Vote</span>
+              <span className="font-bold text-xl text-foreground">VØRA</span>
             </Link>
           </div>
         </header>
@@ -103,7 +103,7 @@ const PublicResults = () => {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Vote className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">Let's Vote</span>
+            <span className="font-bold text-xl text-foreground">VØRA</span>
           </Link>
         </div>
       </header>
@@ -343,7 +343,7 @@ const PublicResults = () => {
       <footer className="py-12 bg-card border-t border-border">
         <div className="container mx-auto px-4 text-center">
           <p className="text-muted-foreground text-sm">
-            ©2025 Let's Vote. Secure elections for modern campuses.
+            ©2025 VØRA. Secure elections for modern campuses.
           </p>
         </div>
       </footer>

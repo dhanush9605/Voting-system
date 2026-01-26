@@ -230,7 +230,7 @@ export function RegisterForm() {
     }
 
     return (
-        <Card className="border-0 shadow-elevated">
+        <Card className="border-0 shadow-xl bg-white/60 backdrop-blur-xl ring-1 ring-white/40">
             <CardHeader className="space-y-1 pb-6">
                 <CardTitle className="text-2xl font-bold">
                     {step === 'form' ? 'Register to Vote' : step === 'camera' ? 'Capture Your Photo' : 'Confirm Your Photo'}

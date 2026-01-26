@@ -64,13 +64,11 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
         const loadModels = async () => {
             try {
                 const MODEL_URL = '/models';
-                console.log('Loading face-api models...');
                 await Promise.all([
                     faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
                     faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
                     faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
                 ]);
-                console.log('Models loaded successfully');
                 setModelLoaded(true);
             } catch (err) {
                 console.error('Failed to load models:', err);

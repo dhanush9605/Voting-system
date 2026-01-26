@@ -80,7 +80,7 @@ const VoterProfile = () => {
                             {/* Header */}
                             <div className="flex justify-between items-start z-10">
                                 <div className="w-12 h-12 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center">
-                                    <span className="font-bold text-xl">LV</span>
+                                    <span className="font-bold text-xl">VØ</span>
                                 </div>
                                 <Badge variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20 uppercase tracking-widest text-[10px]">
                                     Official ID
@@ -122,7 +122,7 @@ const VoterProfile = () => {
 
                     <div className="p-4 bg-muted/30 rounded-xl border border-border text-center">
                         <p className="text-xs text-muted-foreground">
-                            This digital ID serves as proof of your registration in the Let's Vote secure voting system.
+                            This digital ID serves as proof of your registration in the VØRA secure voting system.
                         </p>
                     </div>
                 </div>
