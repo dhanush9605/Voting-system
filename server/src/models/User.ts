@@ -25,6 +25,7 @@ export interface IUser extends Document {
     lockUntil?: Date;
     imageHash?: string;
     imageUrl?: string;
+    idCardUrl?: string;
     voteTransactionHash?: string;
     refreshToken?: string;
     createdAt: Date;
@@ -52,6 +53,7 @@ const UserSchema: Schema = new Schema({
     lockUntil: { type: Date },
     imageHash: { type: String },
     imageUrl: { type: String },
+    idCardUrl: { type: String },
     voteTransactionHash: { type: String },
     refreshToken: { type: String }
 }, {

@@ -15,6 +15,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import Register from "./pages/Register";
 import PublicResults from "./pages/PublicResults";
 import NotFound from "./pages/NotFound";
+import CompleteProfile from "./pages/CompleteProfile";
 
 // ...
 
@@ -80,6 +81,7 @@ const App = () => (
               <Route path="/voter/profile" element={<VoterProfile />} />
               <Route path="/vote" element={<VotePage />} />
               <Route path="/verify-face" element={<FaceVerification />} />
+              <Route path="/complete-profile" element={<CompleteProfile />} />
             </Route>
 
             {/* Catch-all */}

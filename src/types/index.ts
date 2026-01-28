@@ -10,6 +10,7 @@ export interface User {
   role: UserRole;
   avatarUrl?: string;
   imageUrl?: string;
+  idCardUrl?: string;
   imageHash?: string;
   hasVoted?: boolean;
   verificationStatus?: 'pending' | 'verified' | 'rejected';
@@ -88,6 +89,7 @@ export interface VoterRecord {
   email?: string;
   phone?: string;
   imageUrl?: string;
+  idCardUrl?: string; // Add this field
   imageHash?: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
   hasVoted: boolean;

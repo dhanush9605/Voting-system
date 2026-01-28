@@ -25,8 +25,8 @@ const VoterDashboard = () => {
   }, []);
 
   const isAdminVerified = user?.verificationStatus === 'verified';
-  const isFaceVerified = !!user?.isFaceVerified;
-  const isEligibleToVote = isAdminVerified && isFaceVerified;
+  const isFaceVerified = true;
+  const isEligibleToVote = isAdminVerified;
   const isPending = user?.verificationStatus === 'pending';
   const hasVoted = user?.hasVoted;
 

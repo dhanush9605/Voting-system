@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, UserCheck, UserX, Eye, Download, CheckCircle, XCircle, Trash2 } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import { Search, Filter, UserCheck, UserX, Eye, Download, CheckCircle, XCircle, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,17 +13,38 @@ import api from "@/lib/api";
 type FilterStatus = "all" | "pending" | "verified" | "rejected";
 
 const VoterManagement = () => {
+  const location = useLocation();
+  const isVerificationPage = location.pathname === "/admin/verify";
+
   const { toast } = useToast();
   const [voters, setVoters] = useState<VoterRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  // Default to 'pending' if on verification page, otherwise 'all'
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>(isVerificationPage ? "pending" : "all");
   const [selectedVoters, setSelectedVoters] = useState<string[]>([]);
   const [viewImageVoter, setViewImageVoter] = useState<VoterRecord | null>(null);
+  const [rejectDialogVoter, setRejectDialogVoter] = useState<VoterRecord | null>(null);
+  const [isBulkReject, setIsBulkReject] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedReason, setSelectedReason] = useState("");
+
+  const PREDEFINED_REASONS = [
+    "Blurry ID Card Image",
+    "Face Does Not Match ID",
+    "ID Card Expired",
+    "Details Do Not Match",
+    "Invalid Document Type"
+  ];
 
   useEffect(() => {
     fetchVoters();
   }, []);
+
+  // Update filter based on route change
+  useEffect(() => {
+    setFilterStatus(isVerificationPage ? "pending" : "all");
+  }, [isVerificationPage]);
 
   const fetchVoters = async () => {
     try {
@@ -40,7 +62,8 @@ const VoterManagement = () => {
         hasVoted: user.hasVoted,
         registeredAt: user.createdAt,
         imageUrl: user.imageUrl,
-        imageHash: user.imageHash
+        imageHash: user.imageHash,
+        idCardUrl: user.idCardUrl
       }));
 
       setVoters(mappedVoters);
@@ -80,7 +103,7 @@ const VoterManagement = () => {
     }
   };
 
-  const handleBulkAction = async (action: "approve" | "reject") => {
+  const handleBulkAction = async (action: "approve" | "reject", reason?: string) => {
     if (selectedVoters.length === 0) {
       toast({ title: "No voters selected", variant: "destructive" });
       return;
@@ -92,7 +115,10 @@ const VoterManagement = () => {
 
     for (const voterId of selectedVoters) {
       try {
-        await api.put(`/admin/verify-voter/${voterId}`, { status });
+        await api.put(`/admin/verify-voter/${voterId}`, {
+          status,
+          rejectionReason: reason
+        });
         successCount++;
 
         // Update local state
@@ -111,13 +137,19 @@ const VoterManagement = () => {
       variant: successCount > 0 ? "default" : "destructive"
     });
     setSelectedVoters([]);
+    setIsBulkReject(false);
+    setRejectionReason("");
+    setSelectedReason("");
   };
 
-  const handleSingleAction = async (voterId: string, action: "approve" | "reject") => {
+  const handleSingleAction = async (voterId: string, action: "approve" | "reject", reason?: string) => {
     const status = action === "approve" ? "verified" : "rejected";
 
     try {
-      await api.put(`/admin/verify-voter/${voterId}`, { status });
+      await api.put(`/admin/verify-voter/${voterId}`, {
+        status,
+        rejectionReason: reason
+      });
 
       setVoters(voters.map(v =>
         v.id === voterId
@@ -129,6 +161,12 @@ const VoterManagement = () => {
         title: `Voter ${action === "approve" ? "approved" : "rejected"} successfully`,
         variant: "default"
       });
+
+      // Close dialogs
+      setRejectDialogVoter(null);
+      setRejectionReason("");
+      setSelectedReason("");
+
     } catch (error) {
       console.error(error);
       toast({
@@ -137,6 +175,18 @@ const VoterManagement = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const openRejectDialog = (voter: VoterRecord) => {
+    setRejectDialogVoter(voter);
+    setSelectedReason(PREDEFINED_REASONS[0]);
+    setRejectionReason("");
+  };
+
+  const openBulkRejectDialog = () => {
+    setIsBulkReject(true);
+    setSelectedReason(PREDEFINED_REASONS[0]);
+    setRejectionReason("");
   };
 
   const handleDelete = async (voterId: string) => {
@@ -197,8 +247,12 @@ const VoterManagement = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Voter Management</h1>
-          <p className="text-muted-foreground mt-1">Review and manage registered voters</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            {isVerificationPage ? "Voter Verification" : "Voter Management"}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isVerificationPage ? "Review and approve pending voter applications" : "Review and manage registered voters"}
+          </p>
         </div>
         <Button variant="outline" onClick={exportCSV}>
           <Download className="w-4 h-4 mr-2" />
@@ -245,7 +299,7 @@ const VoterManagement = () => {
               <CheckCircle className="w-4 h-4 mr-1" />
               Approve Selected
             </Button>
-            <Button size="sm" variant="destructive" onClick={() => handleBulkAction("reject")}>
+            <Button size="sm" variant="destructive" onClick={openBulkRejectDialog}>
               <XCircle className="w-4 h-4 mr-1" />
               Reject Selected
             </Button>
@@ -335,6 +389,17 @@ const VoterManagement = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
+                          {voter.idCardUrl && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => window.open(voter.idCardUrl, '_blank')}
+                              title="View ID Card"
+                              className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          )}
                           {voter.verificationStatus === "pending" && (
                             <>
                               <Button
@@ -347,7 +412,7 @@ const VoterManagement = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleSingleAction(voter.id, "reject")}
+                                onClick={() => openRejectDialog(voter)}
                               >
                                 <UserX className="w-4 h-4 text-destructive" />
                               </Button>
@@ -381,14 +446,41 @@ const VoterManagement = () => {
             <DialogDescription>Review voter registration information</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="aspect-square w-64 mx-auto rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-              {viewImageVoter?.imageUrl ? (
-                <img src={viewImageVoter.imageUrl} alt={viewImageVoter.name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-muted-foreground">No image available</span>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Face Image */}
+              <div className="space-y-2">
+                <h4 className="font-medium text-center text-sm text-muted-foreground">Face Capture</h4>
+                <div className="aspect-square w-full rounded-xl bg-muted flex items-center justify-center overflow-hidden border">
+                  {viewImageVoter?.imageUrl ? (
+                    <img src={viewImageVoter.imageUrl} alt="Face" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-muted-foreground">No face image</span>
+                  )}
+                </div>
+              </div>
+
+              {/* ID Card Image */}
+              <div className="space-y-2">
+                <h4 className="font-medium text-center text-sm text-muted-foreground">ID Card Document</h4>
+                <div className="aspect-square w-full rounded-xl bg-muted flex items-center justify-center overflow-hidden border relative group">
+                  {viewImageVoter?.idCardUrl ? (
+                    <>
+                      <img src={viewImageVoter.idCardUrl} alt="ID Card" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="secondary" size="sm" onClick={() => window.open(viewImageVoter.idCardUrl, '_blank')}>
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View Full
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">No ID card uploaded</span>
+                  )}
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+
+            <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
               <div>
                 <span className="text-muted-foreground">Student ID:</span>
                 <p className="font-medium">{viewImageVoter?.studentId}</p>
@@ -414,8 +506,10 @@ const VoterManagement = () => {
                   variant="destructive"
                   className="flex-1"
                   onClick={() => {
-                    if (viewImageVoter) handleSingleAction(viewImageVoter.id, "reject");
-                    setViewImageVoter(null);
+                    if (viewImageVoter) {
+                      setViewImageVoter(null);
+                      openRejectDialog(viewImageVoter);
+                    }
                   }}
                 >
                   Reject
@@ -433,6 +527,79 @@ const VoterManagement = () => {
               </div>
             )}
             <Button variant="outline" onClick={() => setViewImageVoter(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Reason Dialog */}
+      {/* Reject Reason Dialog */}
+      <Dialog open={!!rejectDialogVoter || isBulkReject} onOpenChange={() => { setRejectDialogVoter(null); setIsBulkReject(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject {isBulkReject ? `${selectedVoters.length} Voters` : 'Voter Registration'}</DialogTitle>
+            <DialogDescription>
+              Please specify the reason for rejecting {isBulkReject ? 'these applications' : `${rejectDialogVoter?.name}'s application`}. This will be sent to them via email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Common Reasons</label>
+              <div className="grid grid-cols-1 gap-2">
+                {PREDEFINED_REASONS.map((reason) => (
+                  <div
+                    key={reason}
+                    className={`p-3 rounded-md border cursor-pointer transition-colors ${selectedReason === reason ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}`}
+                    onClick={() => setSelectedReason(reason)}
+                  >
+                    <span className="text-sm">{reason}</span>
+                  </div>
+                ))}
+                <div
+                  className={`p-3 rounded-md border cursor-pointer transition-colors ${selectedReason === 'Other' ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}`}
+                  onClick={() => setSelectedReason('Other')}
+                >
+                  <span className="text-sm">Other (Custom Reason)</span>
+                </div>
+              </div>
+            </div>
+
+            {(selectedReason === 'Other' || true) && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  {selectedReason === 'Other' ? 'Custom Reason' : 'Additional Notes (Optional)'}
+                </label>
+                <textarea
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder={selectedReason === 'Other' ? "Enter detailed rejection reason..." : "Add specific details if needed..."}
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRejectDialogVoter(null); setIsBulkReject(false); }}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const finalReason = selectedReason === 'Other'
+                  ? rejectionReason
+                  : rejectionReason ? `${selectedReason}. ${rejectionReason}` : selectedReason;
+
+                if (!finalReason) {
+                  toast({ title: "Please provide a reason", variant: "destructive" });
+                  return;
+                }
+
+                if (isBulkReject) {
+                  handleBulkAction("reject", finalReason);
+                } else if (rejectDialogVoter) {
+                  handleSingleAction(rejectDialogVoter.id, "reject", finalReason);
+                }
+              }}
+            >
+              Confirm Rejection
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -312,6 +312,8 @@ export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: 
                             {isLoading ? 'Signing in...' : 'Sign in'}
                         </Button>
 
+
+
                         {/* Register link for voters */}
                         {role === 'voter' && (
                             <p className="text-center text-sm text-muted-foreground">

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -72,6 +73,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
         hasVoted: user.hasVoted,
         imageHash: user.imageHash,
         imageUrl: user.imageUrl,
+        idCardUrl: user.idCardUrl,
         voteTransactionHash: user.voteTransactionHash
     });
 };
@@ -81,7 +83,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
 // @access  Public
 export const registerUser = async (req: Request, res: Response) => {
     try {
-        const { name, email, password, role, studentId, imageHash, imageUrl } = req.body;
+        const { name, email, password, role, studentId, imageHash, imageUrl, idCardUrl } = req.body;
 
         const userExists = await User.findOne({ $or: [{ email }, { studentId }] });
 
@@ -135,7 +137,7 @@ export const registerUser = async (req: Request, res: Response) => {
                 return;
             }
         }
-        // --- Duplicate Face Check End ---
+
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -148,7 +150,8 @@ export const registerUser = async (req: Request, res: Response) => {
             studentId,
             verificationStatus: 'pending',
             imageHash,
-            imageUrl
+            imageUrl,
+            idCardUrl
         });
 
         if (user) {
@@ -209,6 +212,8 @@ export const registerUser = async (req: Request, res: Response) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+
 
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
@@ -414,6 +419,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             isFaceVerified: user.isFaceVerified,
             hasVoted: user.hasVoted,
             imageUrl: user.imageUrl,
+            idCardUrl: user.idCardUrl,
             voteTransactionHash: user.voteTransactionHash
         });
     } else {
@@ -443,13 +449,37 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
 
 
 
+// @desc    Update user face data (for google login completion)
+// @route   PUT /api/auth/update-face
+// @access  Private
+export const updateFaceData = async (req: AuthRequest, res: Response) => {
+    try {
+        const { imageHash, imageUrl } = req.body;
+        const user = await User.findById(req.user?._id);
+
+        if (user) {
+            user.imageHash = imageHash;
+            // user.isFaceVerified = true; // Optional: mark verified immediately? Or keep waiting for vote time? 
+            // The prompt "Complete Profile" implies this IS the registration of face.
+            if (imageUrl) user.imageUrl = imageUrl;
+
+            await user.save();
+            res.json({ message: 'Face data updated successfully' });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // @desc    Verify user face
 // @route   POST /api/auth/verify-face
 // @access  Private
 export const verifyFace = async (req: AuthRequest, res: Response) => {
     try {
         const { faceDescriptor } = req.body;
-        console.log("VerifyRequest: User ID:", req.user?._id);
+        // console.log("VerifyRequest: User ID:", req.user?._id);
 
         if (!faceDescriptor || !Array.isArray(faceDescriptor)) {
             res.status(400).json({ message: 'Valid face descriptor is required' });
@@ -469,7 +499,7 @@ export const verifyFace = async (req: AuthRequest, res: Response) => {
         }
 
         if (!user.imageHash) {
-            console.log("VerifyRequest: No imageHash found for user");
+            console.warn("VerifyRequest: No imageHash found for user");
             res.status(400).json({ message: 'No registered face data found for this user.' });
             return;
         }
@@ -483,7 +513,7 @@ export const verifyFace = async (req: AuthRequest, res: Response) => {
         }
 
         const distance = euclideanDistance(faceDescriptor, registeredDescriptor);
-        console.log(`VerifyRequest: Distance=${distance}`);
+        // console.log(`VerifyRequest: Distance=${distance}`);
         // Adjusted threshold to 0.55
         const THRESHOLD = 0.55;
 

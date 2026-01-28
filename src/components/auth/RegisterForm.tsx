@@ -11,8 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage, isCameraSupported } from "@/lib/image-utils";
 import { FaceCapture } from "./FaceCapture";
+import { ImageUpload } from "@/components/ui/ImageUpload";
+import { IdCard } from "lucide-react";
 
-type RegistrationStep = 'form' | 'camera' | 'preview' | 'submitting' | 'success';
+type RegistrationStep = 'form' | 'id-upload' | 'camera' | 'preview' | 'submitting' | 'success';
 
 // Password strength indicator
 function PasswordStrengthIndicator({ password }: { password: string }) {
@@ -87,6 +89,7 @@ export function RegisterForm() {
     const [consentGiven, setConsentGiven] = useState(false);
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const [imageHash, setImageHash] = useState<string | null>(null);
+    const [idCardUrl, setIdCardUrl] = useState<string | null>(null);
     const [step, setStep] = useState<RegistrationStep>('form');
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,7 +146,7 @@ export function RegisterForm() {
             return;
         }
 
-        setStep('camera');
+        setStep('id-upload');
     };
 
 
@@ -179,7 +182,8 @@ export function RegisterForm() {
                 email,
                 password,
                 imageHash,
-                imageUrl: publicUrl
+                imageUrl: publicUrl,
+                idCardUrl
             });
 
             // Mock successful registration
@@ -233,14 +237,16 @@ export function RegisterForm() {
         <Card className="border-0 shadow-xl bg-white/60 backdrop-blur-xl ring-1 ring-white/40">
             <CardHeader className="space-y-1 pb-6">
                 <CardTitle className="text-2xl font-bold">
-                    {step === 'form' ? 'Register to Vote' : step === 'camera' ? 'Capture Your Photo' : 'Confirm Your Photo'}
+                    {step === 'form' ? 'Register to Vote' : step === 'id-upload' ? 'Upload ID Card' : step === 'camera' ? 'Capture Your Photo' : 'Confirm Your Photo'}
                 </CardTitle>
                 <CardDescription>
                     {step === 'form'
                         ? 'Create your voter account to participate in elections'
-                        : step === 'camera'
-                            ? 'We need your photo for identity verification'
-                            : 'Review your photo before submitting'}
+                        : step === 'id-upload'
+                            ? 'Please upload your Student ID Card for verification'
+                            : step === 'camera'
+                                ? 'We need your photo for identity verification'
+                                : 'Review your photo before submitting'}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -378,6 +384,8 @@ export function RegisterForm() {
                             Continue to Photo Capture
                         </Button>
 
+
+
                         <p className="text-center text-sm text-muted-foreground">
                             Already registered?{' '}
                             <Link to="/login" className="text-primary font-medium hover:underline">
@@ -385,6 +393,36 @@ export function RegisterForm() {
                             </Link>
                         </p>
                     </form>
+                )}
+
+                {step === 'id-upload' && (
+                    <div className="space-y-6">
+                        <div className="p-4 bg-muted/50 rounded-lg border border-border flex gap-3">
+                            <IdCard className="w-5 h-5 text-primary mt-0.5" />
+                            <p className="text-sm text-foreground">
+                                Upload a clear photo of your Student ID Card. This is required for admin approval.
+                            </p>
+                        </div>
+
+                        <ImageUpload
+                            label="Student ID Card"
+                            onUploadComplete={(url) => setIdCardUrl(url)}
+                        />
+
+                        <div className="flex gap-3 pt-4">
+                            <Button variant="outline" onClick={() => setStep('form')} className="flex-1">
+                                Back
+                            </Button>
+                            <Button
+                                variant="hero"
+                                onClick={() => setStep('camera')}
+                                className="flex-1"
+                                disabled={!idCardUrl}
+                            >
+                                Continue to Photo
+                            </Button>
+                        </div>
+                    </div>
                 )}
 
                 {step === 'camera' && (

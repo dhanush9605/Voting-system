@@ -67,6 +67,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+
+
   const loginWithStudentId = useCallback(async (studentId: string, password: string, rememberMe: boolean, faceDescriptor?: number[]) => {
     try {
       const { data } = await api.post('/auth/login', { studentId, password, rememberMe, faceDescriptor });

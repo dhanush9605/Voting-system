@@ -37,7 +37,6 @@ app.set('trust proxy', 1);
 
 
 import uploadRoutes from './routes/uploadRoutes';
-import faceRoutes from './routes/faceRoutes';
 import adminRoutes from './routes/adminRoutes';
 import candidateRoutes from './routes/candidateRoutes';
 import voteRoutes from './routes/voteRoutes';
@@ -45,7 +44,6 @@ import electionRoutes from './routes/electionRoutes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/uploads', uploadRoutes);
-app.use('/api/face', faceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/candidates', candidateRoutes);
 app.use('/api/vote', voteRoutes);

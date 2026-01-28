@@ -24,9 +24,7 @@ const transporter = nodemailer.createTransport({
 // Verify connection configuration
 transporter.verify(function (error, success) {
     if (error) {
-        console.log("❌ Email Service Error:", error);
-    } else {
-        console.log("✅ Email Service is ready to take messages");
+        console.error("❌ Email Service Error:", error);
     }
 });
 
@@ -57,7 +55,7 @@ export const sendEmail = async ({ to, subject, text, html }: EmailOptions) => {
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log(`📧 Email sent to ${to}: ${info.messageId}`);
+        // console.log(`📧 Email sent to ${to}: ${info.messageId}`);
         return info;
     } catch (error: any) {
         console.error("❌ Send Mail Failed:", error);

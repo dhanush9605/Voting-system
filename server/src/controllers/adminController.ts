@@ -31,7 +31,7 @@ export const getAllVoters = async (req: AuthRequest, res: Response) => {
 // @access  Private/Admin
 export const verifyVoter = async (req: AuthRequest, res: Response) => {
     try {
-        const { status } = req.body;
+        const { status, rejectionReason } = req.body;
         const userId = req.params.id;
 
         if (!status || ![VerificationStatus.VERIFIED, VerificationStatus.REJECTED].includes(status)) {
@@ -56,7 +56,7 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
             title: status === VerificationStatus.VERIFIED ? 'Verification Approved' : 'Verification Rejected',
             message: status === VerificationStatus.VERIFIED
                 ? 'Your account has been verified. You can now vote.'
-                : 'Your verification was rejected. Please contact admin or try again.'
+                : `Your verification was rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : 'Please check your details.'}`
         });
 
         // Send Email Notification (Fire & Forget)
@@ -72,7 +72,7 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
                     <p>
                         ${status === VerificationStatus.VERIFIED
                     ? 'Congratulations! Your voter account has been <strong>verified</strong> by the administration.'
-                    : 'We regret to inform you that your voter verification request has been <strong>rejected</strong>.'}
+                    : `We regret to inform you that your voter verification request has been <strong>rejected</strong>.${rejectionReason ? `<br><br><strong>Reason:</strong> ${rejectionReason}` : ''}`}
                     </p>
                     ${status === VerificationStatus.VERIFIED
                     ? '<p>You are now eligible to cast your vote in the upcoming election.</p>'
