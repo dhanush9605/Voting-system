@@ -440,12 +440,12 @@ const VoterManagement = () => {
 
       {/* View Image Dialog */}
       <Dialog open={!!viewImageVoter} onOpenChange={() => setViewImageVoter(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Voter Details: {viewImageVoter?.name}</DialogTitle>
             <DialogDescription>Review voter registration information</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Face Image */}
               <div className="space-y-2">
@@ -462,7 +462,7 @@ const VoterManagement = () => {
               {/* ID Card Image */}
               <div className="space-y-2">
                 <h4 className="font-medium text-center text-sm text-muted-foreground">ID Card Document</h4>
-                <div className="aspect-square w-full rounded-xl bg-muted flex items-center justify-center overflow-hidden border relative group">
+                <div className="aspect-video w-full rounded-xl bg-muted flex items-center justify-center overflow-hidden border relative group">
                   {viewImageVoter?.idCardUrl ? (
                     <>
                       <img src={viewImageVoter.idCardUrl} alt="ID Card" className="w-full h-full object-cover" />
