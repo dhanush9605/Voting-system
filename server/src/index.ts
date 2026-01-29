@@ -22,7 +22,10 @@ app.use(cors({
         'http://localhost:5173',
         'http://localhost:4173',
         'http://localhost:8080',
-        'https://voting2026.vercel.app'
+        'https://voting2026.vercel.app',
+        'http://localhost',
+        'capacitor://localhost',
+        'http://10.0.2.2'
     ],
     credentials: true
 }));
