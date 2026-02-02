@@ -30,8 +30,16 @@ export const uploadFile = async (req: Request, res: Response) => {
         });
 
     } catch (error: any) {
-        console.error("Upload Error Complete Object:", JSON.stringify(error, null, 2));
-        res.status(500).json({ message: error.message || 'Image upload failed', error: error });
+        console.error("Upload Error Metadata:", {
+            filename: req.file?.originalname,
+            mimetype: req.file?.mimetype,
+            size: req.file?.size
+        });
+        console.error("Cloudinary Error Detail:", error);
+        res.status(500).json({
+            message: error.message || 'Image upload failed',
+            details: error.error || error.message || 'Internal server error'
+        });
     }
 };
 

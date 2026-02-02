@@ -52,9 +52,10 @@ export function ImageUpload({ onUploadComplete, label = "Upload Image" }: ImageU
 
             setUploadedUrl(data.url);
             onUploadComplete(data.url);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Upload failed", error);
-            alert("Failed to upload image. Please try again.");
+            const errorMsg = error.response?.data?.message || error.message || "Failed to upload image. Please try again.";
+            alert(`Upload failed: ${errorMsg}`);
             setFile(null);
             setPreview(null);
         } finally {
