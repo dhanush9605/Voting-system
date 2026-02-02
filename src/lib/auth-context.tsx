@@ -25,17 +25,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = await api.get('/auth/profile');
       setState({
         user: data,
-        token: 'cookie', // Placeholder
+        token: 'cookie',
         isAuthenticated: true,
         isLoading: false,
       });
     } catch (error) {
-      setState({
-        user: null,
-        token: null,
-        isAuthenticated: false,
+      // Don't auto-logout if it's just a network error or maintenance
+      const isNetworkError = !(error as any).response;
+
+      setState(prev => ({
+        ...prev,
+        isAuthenticated: isNetworkError ? prev.isAuthenticated : false,
+        user: isNetworkError ? prev.user : null,
         isLoading: false,
-      });
+      }));
     }
   }, []);
 

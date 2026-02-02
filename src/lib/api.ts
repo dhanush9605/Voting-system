@@ -19,10 +19,11 @@ api.interceptors.response.use(
             try {
                 await api.post('/auth/refresh');
                 return api(originalRequest);
-            } catch (refreshError) {
+            } catch (refreshError: any) {
                 // Refresh failed (token expired or invalid)
-                // Redirect to login or handle logout
-                if (window.location.pathname !== '/login' && !originalRequest.url?.includes('/auth/profile')) {
+                // Only redirect to login if we explicitly got a failure from the server, 
+                // not just a network error during the refresh attempt.
+                if (refreshError.response && window.location.pathname !== '/login' && !originalRequest.url?.includes('/auth/profile')) {
                     window.location.href = '/login';
                 }
                 return Promise.reject(refreshError);

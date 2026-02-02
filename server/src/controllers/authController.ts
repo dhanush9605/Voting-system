@@ -40,7 +40,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
     user.refreshToken = refreshToken;
     await user.save();
 
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true' || process.env.VERCEL === '1';
 
     res.cookie('jwt', accessToken, {
         httpOnly: true,
@@ -71,7 +71,6 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
         verificationStatus: user.verificationStatus,
         isFaceVerified: user.isFaceVerified,
         hasVoted: user.hasVoted,
-        imageHash: user.imageHash,
         imageUrl: user.imageUrl,
         idCardUrl: user.idCardUrl,
         voteTransactionHash: user.voteTransactionHash
@@ -100,20 +99,21 @@ export const registerUser = async (req: Request, res: Response) => {
             try {
                 const newFaceDescriptor = JSON.parse(imageHash);
 
-                // Fetch all users with a registered face
-                // Optimization: In a large production app, use a vector DB or filtered query
-                const existingUsers = await User.find({ imageHash: { $exists: true, $ne: null } });
+                // Fetch only users that actually have a face registered
+                // Limit to the last 200 users to prevent extreme slowness in registration
+                // In a massive app, this should be replaced by a vector similarity search (Pinecone, etc.)
+                const existingUsers = await User.find({
+                    imageHash: { $exists: true, $ne: null }
+                })
+                    .sort({ createdAt: -1 })
+                    .limit(200)
+                    .select('imageHash email');
 
                 const DUPLICATE_THRESHOLD = 0.45; // Strict threshold for registration
 
                 for (const existingUser of existingUsers) {
-                    // Skip if for some reason imageHash is missing on the object (though query filters it)
                     if (!existingUser.imageHash) continue;
-
-                    // Skip if not a JSON array string
-                    if (!existingUser.imageHash.trim().startsWith('[')) {
-                        continue;
-                    }
+                    if (!existingUser.imageHash.trim().startsWith('[')) continue;
 
                     try {
                         const existingDescriptor = JSON.parse(existingUser.imageHash);
@@ -122,13 +122,13 @@ export const registerUser = async (req: Request, res: Response) => {
                         if (distance < DUPLICATE_THRESHOLD) {
                             console.log(`Duplicate Registration Attempt: Face matches user ${existingUser._id} (${existingUser.email}) with distance ${distance}`);
                             res.status(400).json({
-                                message: 'This face is already registered with another account. Multiple accounts are not allowed.'
+                                message: 'This face is already registered with another account.'
                             });
                             return;
                         }
                     } catch (e) {
-                        // Ignore parsing errors for individual existing users to prevent blocking valid registrations
-                        console.error(`Error parsing imageHash for user ${existingUser._id}`, e);
+                        // Skip malformed data
+                        continue;
                     }
                 }
             } catch (error) {
@@ -349,7 +349,7 @@ export const refreshToken = async (req: Request, res: Response) => {
         user.refreshToken = newRefreshToken;
         await user.save();
 
-        const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true';
+        const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER === 'true' || process.env.VERCEL === '1';
 
         res.cookie('jwt', accessToken, {
             httpOnly: true,
