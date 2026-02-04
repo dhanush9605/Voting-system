@@ -7,34 +7,24 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieCha
 import api from "@/lib/api";
 import confetti from "canvas-confetti";
 
+import { useQuery } from "@tanstack/react-query";
+
 const PublicResults = () => {
-  const [resultsData, setResultsData] = useState<any[]>([]);
-  const [totalVotes, setTotalVotes] = useState(0);
-  const [winner, setWinner] = useState<any>(null);
-  const [isTie, setIsTie] = useState(false);
-  const [isPublished, setIsPublished] = useState(false);
-  const [publishedAt, setPublishedAt] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: electionData, isLoading: loading, error } = useQuery({
+    queryKey: ['election-results'],
+    queryFn: async () => {
+      const { data } = await api.get('/election/results');
+      return data;
+    },
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
 
-  useEffect(() => {
-    const fetchResults = async () => {
-      try {
-        const { data } = await api.get('/election/results');
-        setResultsData(data.results);
-        setTotalVotes(data.totalVotes);
-        setWinner(data.winner);
-        setIsTie(data.isTie);
-        setIsPublished(true);
-        setPublishedAt(data.publishedAt);
-      } catch (error) {
-        setIsPublished(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchResults();
-  }, []);
+  const resultsData = electionData?.results || [];
+  const totalVotes = electionData?.totalVotes || 0;
+  const winner = electionData?.winner || null;
+  const isTie = electionData?.isTie || false;
+  const isPublished = !!electionData;
+  const publishedAt = electionData?.publishedAt || null;
 
   useEffect(() => {
     if (winner) {
@@ -112,9 +102,15 @@ const PublicResults = () => {
         <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
           {/* Header */}
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-full text-sm font-medium mb-6">
-              <BarChart3 className="w-4 h-4" />
-              Official Results Published
+            <div className="flex justify-center items-center gap-3 mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-full text-sm font-medium">
+                <BarChart3 className="w-4 h-4" />
+                Official Results
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold animate-pulse border border-primary/20">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                LIVE SYNC
+              </div>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Student Council Election 2025

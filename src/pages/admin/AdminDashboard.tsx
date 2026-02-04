@@ -1,4 +1,4 @@
-import { Users, UserCheck, Vote, BarChart3, TrendingUp, Calendar } from "lucide-react";
+import { Users, UserCheck, Vote, BarChart3, TrendingUp, Calendar, RefreshCcw } from "lucide-react";
 import { StatCard, Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/lib/auth-context";
@@ -7,38 +7,28 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState({
+  const { data: dashboardData, isLoading: loading } = useQuery({
+    queryKey: ['admin-dashboard'],
+    queryFn: async () => {
+      const { data } = await api.get('/admin/dashboard');
+      return data;
+    },
+    refetchInterval: 10000, // Poll every 10 seconds
+  });
+
+  const stats = dashboardData?.stats || {
     totalRegistered: 0,
     verifiedVoters: 0,
     votesCast: 0,
     candidates: 0
-  });
-
-  const [pieData, setPieData] = useState<{ name: string; value: number; color: string }[]>([]);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
-  const [blockchain, setBlockchain] = useState({ connected: false, network: 'Unknown', address: '', balance: '0.00' });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const { data } = await api.get('/admin/dashboard');
-        setStats(data.stats);
-        setPieData(data.charts.pieData);
-        setRecentActivity(data.recentActivity);
-        if (data.blockchain) setBlockchain(data.blockchain);
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
+  };
+  const pieData = dashboardData?.charts?.pieData || [];
+  const recentActivity = dashboardData?.recentActivity || [];
+  const blockchain = dashboardData?.blockchain || { connected: false, network: 'Unknown', address: '', balance: '0.00' };
 
   if (loading) {
     return <div className="p-8 text-center">Loading dashboard...</div>;
@@ -57,6 +47,10 @@ const AdminDashboard = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold animate-pulse border border-primary/20">
+            <RefreshCcw className="w-3 h-3" />
+            LIVE
+          </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-card rounded-full border border-border shadow-soft">
             <Calendar className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-foreground">This Month</span>

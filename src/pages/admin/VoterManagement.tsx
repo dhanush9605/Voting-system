@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { Search, Filter, UserCheck, UserX, Eye, Download, CheckCircle, XCircle, Trash2, ExternalLink } from "lucide-react";
+import { Search, Filter, UserCheck, UserX, Eye, Download, CheckCircle, XCircle, Trash2, ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { useToast } from "@/hooks/use-toast";
 import { VoterRecord } from "@/types";
 import api from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type FilterStatus = "all" | "pending" | "verified" | "rejected";
 
@@ -17,10 +18,28 @@ const VoterManagement = () => {
   const isVerificationPage = location.pathname === "/admin/verify";
 
   const { toast } = useToast();
-  const [voters, setVoters] = useState<VoterRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: votersData, isLoading: loading } = useQuery({
+    queryKey: ['admin-voters'],
+    queryFn: async () => {
+      const { data } = await api.get('/admin/voters');
+      return data.map((user: any) => ({
+        id: user._id,
+        name: user.name,
+        studentId: user.studentId,
+        email: user.email,
+        verificationStatus: user.verificationStatus,
+        hasVoted: user.hasVoted,
+        registeredAt: user.createdAt,
+        imageUrl: user.imageUrl,
+        imageHash: user.imageHash,
+        idCardUrl: user.idCardUrl
+      }));
+    },
+    refetchInterval: 15000, // Poll every 15 seconds
+  });
+
+  const voters = votersData || [];
   const [searchQuery, setSearchQuery] = useState("");
-  // Default to 'pending' if on verification page, otherwise 'all'
   const [filterStatus, setFilterStatus] = useState<FilterStatus>(isVerificationPage ? "pending" : "all");
   const [selectedVoters, setSelectedVoters] = useState<string[]>([]);
   const [viewImageVoter, setViewImageVoter] = useState<VoterRecord | null>(null);
@@ -37,55 +56,22 @@ const VoterManagement = () => {
     "Invalid Document Type"
   ];
 
-  useEffect(() => {
-    fetchVoters();
-  }, []);
-
   // Update filter based on route change
   useEffect(() => {
     setFilterStatus(isVerificationPage ? "pending" : "all");
   }, [isVerificationPage]);
 
-  const fetchVoters = async () => {
-    try {
-      setLoading(true);
-      // Fetch all voters
-      const { data } = await api.get('/admin/voters');
+  const queryClient = useQueryClient();
 
-      // Map backend data to frontend model
-      const mappedVoters: VoterRecord[] = data.map((user: any) => ({
-        id: user._id,
-        name: user.name,
-        studentId: user.studentId,
-        email: user.email,
-        verificationStatus: user.verificationStatus,
-        hasVoted: user.hasVoted,
-        registeredAt: user.createdAt,
-        imageUrl: user.imageUrl,
-        imageHash: user.imageHash,
-        idCardUrl: user.idCardUrl
-      }));
-
-      setVoters(mappedVoters);
-    } catch (error) {
-      console.error("Failed to fetch voters", error);
-      toast({
-        title: "Error fetching voters",
-        description: `Could not load voter list. ${(error as any).response?.status} ${(error as any).response?.data?.message || (error as any).message}`,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredVoters = voters.filter(v => {
-    const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === "all" || v.verificationStatus === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+  const filteredVoters = useMemo(() => {
+    return voters.filter(v => {
+      const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        v.studentId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        v.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter = filterStatus === "all" || v.verificationStatus === filterStatus;
+      return matchesSearch && matchesFilter;
+    });
+  }, [voters, searchQuery, filterStatus]);
 
   const toggleSelectVoter = (voterId: string) => {
     setSelectedVoters(prev =>
@@ -120,17 +106,12 @@ const VoterManagement = () => {
           rejectionReason: reason
         });
         successCount++;
-
-        // Update local state
-        setVoters(prev => prev.map(v =>
-          v.id === voterId
-            ? { ...v, verificationStatus: status, verifiedAt: new Date().toISOString() }
-            : v
-        ));
       } catch (error) {
         console.error(`Failed to ${action} voter ${voterId}`);
       }
     }
+
+    queryClient.invalidateQueries({ queryKey: ['admin-voters'] });
 
     toast({
       title: `${action === "approve" ? "Approved" : "Rejected"} ${successCount} voters`,
@@ -151,11 +132,7 @@ const VoterManagement = () => {
         rejectionReason: reason
       });
 
-      setVoters(voters.map(v =>
-        v.id === voterId
-          ? { ...v, verificationStatus: status, verifiedAt: new Date().toISOString() }
-          : v
-      ));
+      queryClient.invalidateQueries({ queryKey: ['admin-voters'] });
 
       toast({
         title: `Voter ${action === "approve" ? "approved" : "rejected"} successfully`,
@@ -197,7 +174,7 @@ const VoterManagement = () => {
     try {
       await api.delete(`/admin/voters/${voterId}`);
 
-      setVoters(voters.filter(v => v.id !== voterId));
+      queryClient.invalidateQueries({ queryKey: ['admin-voters'] });
 
       toast({
         title: "Voter deleted successfully",
@@ -254,10 +231,16 @@ const VoterManagement = () => {
             {isVerificationPage ? "Review and approve pending voter applications" : "Review and manage registered voters"}
           </p>
         </div>
-        <Button variant="outline" onClick={exportCSV}>
-          <Download className="w-4 h-4 mr-2" />
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold animate-pulse border border-primary/20">
+            <RefreshCw className="w-3 h-3" />
+            LIVE
+          </div>
+          <Button variant="outline" onClick={exportCSV}>
+            <Download className="w-4 h-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}

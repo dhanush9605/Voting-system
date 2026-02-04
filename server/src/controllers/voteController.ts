@@ -66,6 +66,7 @@ export const castVote = async (req: AuthRequest, res: Response) => {
 
         // Mark user as having voted
         user.hasVoted = true;
+        user.votedAt = new Date();
         await user.save({ session });
 
         // Commit transaction

@@ -27,6 +27,7 @@ export interface IUser extends Document {
     imageUrl?: string;
     idCardUrl?: string;
     voteTransactionHash?: string;
+    votedAt?: Date;
     refreshToken?: string;
     createdAt: Date;
     updatedAt: Date;
@@ -55,6 +56,7 @@ const UserSchema: Schema = new Schema({
     imageUrl: { type: String },
     idCardUrl: { type: String },
     voteTransactionHash: { type: String },
+    votedAt: { type: Date },
     refreshToken: { type: String }
 }, {
     timestamps: true

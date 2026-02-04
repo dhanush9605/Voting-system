@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Vote, CheckCircle, Clock, AlertCircle, ArrowRight } from "lucide-react";
+import { Vote, CheckCircle, Clock, AlertCircle, ArrowRight, FileText, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
@@ -7,22 +7,18 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { ElectionConfig } from "@/types";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 
 const VoterDashboard = () => {
   const { user } = useAuth();
-  const [election, setElection] = useState<ElectionConfig | null>(null);
-
-  useEffect(() => {
-    const fetchElection = async () => {
-      try {
-        const { data } = await api.get('/election');
-        setElection(data);
-      } catch (error) {
-        console.error("Failed to fetch election info", error);
-      }
-    };
-    fetchElection();
-  }, []);
+  const { data: election } = useQuery({
+    queryKey: ['election-config'],
+    queryFn: async () => {
+      const { data } = await api.get('/election');
+      return data as ElectionConfig;
+    },
+    refetchInterval: 10000, // Poll every 10 seconds
+  });
 
   const isAdminVerified = user?.verificationStatus === 'verified';
   const isFaceVerified = true;
@@ -33,13 +29,19 @@ const VoterDashboard = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Welcome header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-          Welcome, {user?.name?.split(' ')[0]}!
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Here's your voting status and next steps.
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            Welcome, {user?.name?.split(' ')[0]}!
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Here's your voting status and next steps.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold animate-pulse border border-primary/20">
+          <RefreshCw className="w-3 h-3" />
+          LIVE
+        </div>
       </div>
 
       {/* Status Card */}
@@ -112,17 +114,29 @@ const VoterDashboard = () => {
               <div className="p-3 rounded-full bg-accent-teal/20 text-accent-teal shadow-sm">
                 <CheckCircle className="w-6 h-6" />
               </div>
-              <div>
-                <h2 className="text-lg font-bold text-foreground">You have already voted!</h2>
-                <p className="text-muted-foreground mt-1">
-                  Thank you for participating. Your vote is secure on the blockchain.
-                </p>
-                <Link to="/results/public" className="inline-block mt-4">
-                  <Button variant="outline" className="hover:scale-105 transition-transform">
-                    View Results
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+              <div className="flex-1">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-foreground">You have already voted!</h2>
+                    <p className="text-muted-foreground mt-1">
+                      Thank you for participating. Your vote is secure on the blockchain.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link to="/vote">
+                      <Button variant="hero" size="sm" className="bg-foreground text-background hover:bg-foreground/90 font-bold">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Download Receipt
+                      </Button>
+                    </Link>
+                    <Link to="/results/public">
+                      <Button variant="outline" size="sm" className="hover:scale-105 transition-transform">
+                        View Results
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
 
                 {user?.voteTransactionHash && (
                   <div className="mt-6 pt-4 border-t border-accent-teal/20">

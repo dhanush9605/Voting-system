@@ -16,6 +16,7 @@ export interface User {
   verificationStatus?: 'pending' | 'verified' | 'rejected';
   isFaceVerified?: boolean;
   voteTransactionHash?: string;
+  votedAt?: string;
   createdAt: string;
 }
 
@@ -95,6 +96,7 @@ export interface VoterRecord {
   hasVoted: boolean;
   registeredAt: string;
   verifiedAt?: string;
+  votedAt?: string;
 }
 
 export interface DashboardStats {

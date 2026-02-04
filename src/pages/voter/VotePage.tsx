@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
-import { User, Check, X, AlertTriangle, Clock } from "lucide-react";
+import { User, Check, X, AlertTriangle, Clock, Printer, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { Candidate, ElectionConfig } from "@/types";
+import { useQuery } from "@tanstack/react-query";
+import VoteReceipt from "@/components/voter/VoteReceipt";
 
 // Mock candidates
 
@@ -19,7 +21,6 @@ const VotePage = () => {
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
 
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [isAbstaining, setIsAbstaining] = useState(false);
   const [abstainReason, setAbstainReason] = useState("");
@@ -27,53 +28,45 @@ const VotePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [voteReceipt, setVoteReceipt] = useState<{ voteId: string; timestamp: string; transactionHash?: string } | null>(null);
 
-  const [election, setElection] = useState<ElectionConfig | null>(null);
-  const [isElectionActive, setIsElectionActive] = useState(true); // Default true until checked
+  const { data: candidates = [] } = useQuery({
+    queryKey: ['candidates'],
+    queryFn: async () => {
+      const { data } = await api.get('/candidates');
+      return data as Candidate[];
+    },
+    refetchInterval: 30000, // Candidates don't change often, 30s is fine
+  });
+
+  const { data: election } = useQuery({
+    queryKey: ['election-config'],
+    queryFn: async () => {
+      const { data } = await api.get('/election');
+      return data as ElectionConfig;
+    },
+    refetchInterval: 10000, // Poll election state every 10 seconds
+  });
+
   const [electionError, setElectionError] = useState('');
+  const [isElectionActive, setIsElectionActive] = useState(true);
 
   useEffect(() => {
-    fetchCandidates();
-    fetchElectionConfig();
-  }, []);
+    if (election) {
+      const now = new Date();
+      const start = new Date(election.startDate);
+      const end = new Date(election.endDate);
 
-  const fetchElectionConfig = async () => {
-    try {
-      const { data } = await api.get('/election');
-      if (data) {
-        setElection(data);
-        const now = new Date();
-        const start = new Date(data.startDate);
-        const end = new Date(data.endDate);
-
-        if (now < start) {
-          setIsElectionActive(false);
-          setElectionError(`Voting starts on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}`);
-        } else if (now > end) {
-          setIsElectionActive(false);
-          setElectionError(`Voting ended on ${end.toLocaleDateString()} at ${end.toLocaleTimeString()}`);
-        } else {
-          setIsElectionActive(true);
-          setElectionError('');
-        }
+      if (now < start) {
+        setIsElectionActive(false);
+        setElectionError(`Voting starts on ${start.toLocaleDateString()} at ${start.toLocaleTimeString()}`);
+      } else if (now > end) {
+        setIsElectionActive(false);
+        setElectionError(`Voting ended on ${end.toLocaleDateString()} at ${end.toLocaleTimeString()}`);
+      } else {
+        setIsElectionActive(true);
+        setElectionError('');
       }
-    } catch (error) {
-      console.error("Failed to fetch election info");
     }
-  };
-
-  const fetchCandidates = async () => {
-    try {
-      const { data } = await api.get('/candidates');
-      setCandidates(data);
-    } catch (error) {
-      console.error("Failed to fetch candidates", error);
-      toast({
-        title: "Error loading candidates",
-        description: "Please refresh the page.",
-        variant: "destructive",
-      });
-    }
-  };
+  }, [election]);
 
   // Check if user has already voted
   if (user?.hasVoted) {
@@ -83,28 +76,23 @@ const VotePage = () => {
           <Check className="w-10 h-10 text-accent-teal" />
         </div>
         <h1 className="text-2xl font-bold text-foreground mb-4">You've Already Voted</h1>
-        <p className="text-muted-foreground mb-6">
-          Your vote has been recorded securely. Thank you for participating in the election!
+        <p className="text-muted-foreground mb-8">
+          Your vote has been recorded securely. You can view or download your receipt below.
         </p>
-        <Button onClick={() => navigate('/results/public')} variant="hero">
-          View Results
-        </Button>
 
-        {user?.voteTransactionHash && (
-          <div className="mt-8 pt-4 border-t border-accent-teal/20 max-w-sm mx-auto">
-            <p className="text-sm text-foreground/80 mb-2 font-medium">Verification Proof</p>
-            <code className="block bg-secondary p-2 rounded text-xs font-mono break-all mb-3 text-muted-foreground select-all">
-              {user.voteTransactionHash}
-            </code>
-            <Button
-              variant="outline"
-              className="w-full border-accent-teal text-accent-teal hover:bg-accent-teal/10"
-              onClick={() => window.open(`/verify-vote?hash=${user.voteTransactionHash}`, '_blank')}
-            >
-              Verify on Blockchain
-            </Button>
-          </div>
-        )}
+        <div className="mb-10">
+          <VoteReceipt
+            voterName={user.name}
+            timestamp={user.votedAt || user.createdAt}
+            transactionHash={user.voteTransactionHash}
+            voterImage={user.imageUrl}
+            electionName={election?.title}
+          />
+        </div>
+
+        <Button onClick={() => navigate('/results/public')} variant="hero" className="w-full max-w-md">
+          View Live Results
+        </Button>
       </div>
     );
   }
@@ -206,49 +194,24 @@ const VotePage = () => {
           <Check className="w-10 h-10 text-success" />
         </div>
         <h1 className="text-2xl font-bold text-foreground mb-4">Vote Confirmed!</h1>
-        <p className="text-muted-foreground mb-6">
+        <p className="text-muted-foreground mb-8">
           {isAbstaining
             ? "Your abstention has been recorded successfully."
-            : `You voted for ${selectedCandidate?.name}. Thank you for participating!`}
+            : `Thank you for participating! Your vote is securely stored on the blockchain.`}
         </p>
 
-        <Card className="text-left mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">Vote Receipt</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex justify-between py-2 border-b border-border">
-              <span className="text-muted-foreground">Vote ID</span>
-              <code className="font-mono text-sm">{voteReceipt.voteId}</code>
-            </div>
-            <div className="flex justify-between py-2 border-b border-border">
-              <span className="text-muted-foreground">Timestamp</span>
-              <span>{new Date(voteReceipt.timestamp).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-muted-foreground">Choice</span>
-              <span className="font-medium">{isAbstaining ? 'Abstain' : selectedCandidate?.name}</span>
-            </div>
-            {voteReceipt.transactionHash && (
-              <div className="flex flex-col py-2 border-t border-border mt-2">
-                <span className="text-muted-foreground text-sm mb-1">Blockchain Receipt (Tx Hash)</span>
-                <code className="bg-secondary p-2 rounded text-xs break-all select-all">
-                  {voteReceipt.transactionHash}
-                </code>
-                <Button
-                  variant="link"
-                  className="self-start px-0 mt-1 h-auto text-accent-teal"
-                  onClick={() => window.open(`/verify-vote?hash=${voteReceipt.transactionHash}`, '_blank')}
-                >
-                  Verify on Blockchain &rarr;
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="mb-10">
+          <VoteReceipt
+            voterName={user?.name || "Voter"}
+            timestamp={voteReceipt.timestamp}
+            transactionHash={voteReceipt.transactionHash}
+            voterImage={user?.imageUrl}
+            electionName={election?.title}
+          />
+        </div>
 
-        <Button onClick={() => navigate('/results/public')} variant="hero">
-          View Results
+        <Button onClick={() => navigate('/results/public')} variant="hero" className="w-full max-w-md">
+          View Live Results
         </Button>
       </div>
     );
@@ -257,7 +220,11 @@ const VotePage = () => {
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
-      <div className="text-center max-w-2xl mx-auto">
+      <div className="text-center max-w-2xl mx-auto relative">
+        <div className="absolute right-0 top-0 hidden md:flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold animate-pulse border border-primary/20">
+          <RefreshCw className="w-3 h-3" />
+          ACTIVE
+        </div>
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
           Cast Your Vote
         </h1>

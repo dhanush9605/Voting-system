@@ -1,12 +1,30 @@
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Vote, Shield, CheckCircle2, ArrowRight, Smartphone, Lock, Globe, Database, Server, Cpu, Fingerprint, Code, HelpCircle, CheckSquare } from "lucide-react";
+import {
+  Vote,
+  Shield,
+  CheckCircle2,
+  ArrowRight,
+  Smartphone,
+  Lock,
+  Globe,
+  Database,
+  Server,
+  Cpu,
+  Fingerprint,
+  Code,
+  HelpCircle,
+  CheckSquare,
+  Activity,
+  FileCheck,
+  ShieldCheck
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SITE_NAME } from "@/lib/site-config";
 import MeshGradientBackground from "@/components/MeshGradientBackground";
 import IntroAnimation from "@/components/IntroAnimation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useScroll, useMotionValueEvent } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -98,8 +116,6 @@ const Landing = () => {
           </header>
 
           <main className="bg-grain relative isolate">
-
-
             {/* Hero Section - Swiss Style Centered */}
             <section
               className="relative pt-32 pb-16 md:pt-48 md:pb-32 px-4 md:px-6 text-center overflow-hidden"
@@ -251,8 +267,6 @@ const Landing = () => {
               </div>
             </section>
 
-
-
             {/* Feature Grid - Bento Box Style */}
             <section className="py-20 md:py-32 px-4 md:px-6">
               <div className="container max-w-6xl mx-auto">
@@ -379,7 +393,7 @@ const Landing = () => {
               </div>
             </section>
 
-            {/* Tech Stack / Under the Hood */}
+            {/* Security & Trust Section */}
             <section className="py-20 md:py-32 px-4 md:px-6 bg-secondary/10">
               <div className="container max-w-5xl mx-auto text-center md:text-left">
                 <div className="flex flex-col md:flex-row gap-12 items-center">
@@ -391,8 +405,8 @@ const Landing = () => {
                       transition={{ duration: 0.5 }}
                       className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium"
                     >
-                      <Code className="w-4 h-4" />
-                      <span>Open Source Infrastructure</span>
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Security First Infrastructure</span>
                     </motion.div>
                     <motion.h2
                       initial={{ opacity: 0, y: 20 }}
@@ -401,7 +415,7 @@ const Landing = () => {
                       transition={{ duration: 0.5, delay: 0.1 }}
                       className="text-3xl md:text-5xl font-bold tracking-tight"
                     >
-                      Built on the <br />Modern Web.
+                      Engineered for <br />Absolute Trust.
                     </motion.h2>
                     <motion.p
                       initial={{ opacity: 0, y: 20 }}
@@ -410,7 +424,7 @@ const Landing = () => {
                       transition={{ duration: 0.5, delay: 0.2 }}
                       className="text-lg text-muted-foreground leading-relaxed"
                     >
-                      We leverage the most advanced technologies to ensure speed, security, and immutability. No black boxes—just clean, verifiable code.
+                      Our platform ensures every vote is personal, permanent, and perfectly protected. We leverage blockchain technology to eliminate doubt and restore faith in the democratic process.
                     </motion.p>
 
                     <motion.div
@@ -424,7 +438,7 @@ const Landing = () => {
                           transition: { staggerChildren: 0.15 }
                         }
                       }}
-                      className="grid grid-cols-2 gap-4 mt-8"
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8"
                     >
                       <motion.div
                         variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}
@@ -432,11 +446,11 @@ const Landing = () => {
                         className="bg-background p-4 rounded-xl border border-border/40 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                          <Database className="w-5 h-5" />
+                          <Lock className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-sm">MongoDB</div>
-                          <div className="text-xs text-muted-foreground">Scalable Data</div>
+                          <div className="font-bold text-sm">Privacy First</div>
+                          <div className="text-xs text-muted-foreground">Zero-knowledge security</div>
                         </div>
                       </motion.div>
                       <motion.div
@@ -445,11 +459,11 @@ const Landing = () => {
                         className="bg-background p-4 rounded-xl border border-border/40 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center text-yellow-500">
-                          <Server className="w-5 h-5" />
+                          <Activity className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-sm">Node.js</div>
-                          <div className="text-xs text-muted-foreground">High Performance</div>
+                          <div className="font-bold text-sm">Real-Time Audit</div>
+                          <div className="text-xs text-muted-foreground">Live blockchain tracking</div>
                         </div>
                       </motion.div>
                       <motion.div
@@ -458,11 +472,11 @@ const Landing = () => {
                         className="bg-background p-4 rounded-xl border border-border/40 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-500">
-                          <Cpu className="w-5 h-5" />
+                          <Fingerprint className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-sm">React</div>
-                          <div className="text-xs text-muted-foreground">Dynamic UI</div>
+                          <div className="font-bold text-sm">Verified Identity</div>
+                          <div className="text-xs text-muted-foreground">Biometric protection</div>
                         </div>
                       </motion.div>
                       <motion.div
@@ -471,11 +485,11 @@ const Landing = () => {
                         className="bg-background p-4 rounded-xl border border-border/40 flex items-center gap-3 shadow-sm hover:shadow-md transition-shadow"
                       >
                         <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500">
-                          <Fingerprint className="w-5 h-5" />
+                          <FileCheck className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                          <div className="font-bold text-sm">FaceAPI</div>
-                          <div className="text-xs text-muted-foreground">Biometric Auth</div>
+                          <div className="font-bold text-sm">Instant Receipt</div>
+                          <div className="text-xs text-muted-foreground">Cryptographic proof</div>
                         </div>
                       </motion.div>
                     </motion.div>
@@ -669,7 +683,7 @@ const Landing = () => {
               </div>
             </div>
           </footer>
-        </div >
+        </div>
       )}
     </>
   );
