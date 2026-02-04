@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle, ExternalLink, Shield, Printer } from "lucide-react";
+import { CheckCircle, ExternalLink, Shield, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SITE_NAME } from "@/lib/site-config";
@@ -162,8 +162,8 @@ const VoteReceipt: React.FC<VoteReceiptProps> = ({
                                 onClick={handlePrint}
                                 className="w-full bg-foreground text-background hover:bg-foreground/90 font-black shadow-xl h-14 text-sm uppercase tracking-widest"
                             >
-                                <Printer className="w-5 h-5 mr-2" />
-                                Print / Save PDF
+                                <Download className="w-5 h-5 mr-2" />
+                                Download Receipt
                             </Button>
                             <p className="text-[9px] text-muted-foreground leading-relaxed max-w-[300px] font-medium italic">
                                 This document serves as permanent cryptographic proof of your participation. Candidate choices are never recorded on receipts for ballot privacy.
