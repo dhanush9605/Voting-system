@@ -1,12 +1,12 @@
-
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Search, Box, CheckCircle2, XCircle, Loader2, Link as LinkIcon, Clock } from "lucide-react";
+import { Search, Box, CheckCircle2, XCircle, Loader2, Link as LinkIcon, Clock, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SITE_NAME } from "@/lib/site-config";
 
 interface TransactionDetails {
     hash: string;
@@ -61,6 +61,14 @@ const BlockchainVerification = () => {
 
     return (
         <div className="container max-w-4xl mx-auto py-12 px-4 animate-fade-in">
+            {/* Logo Section */}
+            <div className="flex justify-center mb-8">
+                <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <img src="/logo.png" alt={SITE_NAME} className="w-10 h-10 object-contain" />
+                    <span className="font-bold text-2xl text-foreground tracking-tight">{SITE_NAME}</span>
+                </Link>
+            </div>
+
             <div className="text-center mb-10">
                 <h1 className="text-3xl font-bold mb-4 flex items-center justify-center gap-2">
                     Blockchain Verification Board

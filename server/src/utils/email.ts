@@ -7,26 +7,39 @@ const EMAIL_USER = process.env.EMAIL_USER?.trim();
 const EMAIL_PASS = process.env.EMAIL_PASS?.trim();
 const SMTP_HOST = process.env.SMTP_HOST?.trim() || 'smtp-relay.brevo.com';
 
-// Create the transporter globally so we don't open a new connection for every email
-const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: 2525,
-    secure: false, // true for 465, false for other ports
-    auth: {
-        user: EMAIL_USER,
-        pass: EMAIL_PASS
-    },
-    tls: {
-        ciphers: 'SSLv3'
+// Create the transporter globally
+const createTransporter = () => {
+    if (!EMAIL_USER || !EMAIL_PASS || EMAIL_USER.includes('user@example.com')) {
+        console.warn("⚠️ Email credentials missing or placeholder. Email service will be disabled.");
+        return null;
     }
-});
 
-// Verify connection configuration
-transporter.verify(function (error, success) {
-    if (error) {
-        console.error("❌ Email Service Error:", error);
-    }
-});
+    const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: 2525,
+        secure: false, 
+        auth: {
+            user: EMAIL_USER,
+            pass: EMAIL_PASS
+        },
+        tls: {
+            ciphers: 'SSLv3'
+        }
+    });
+
+    // Verify connection configuration
+    transporter.verify(function (error, success) {
+        if (error) {
+            console.error("❌ Email Service Error:", error);
+        } else {
+            console.log("✅ Email service ready");
+        }
+    });
+
+    return transporter;
+};
+
+const transporter = createTransporter();
 
 interface EmailOptions {
     to: string;
@@ -36,17 +49,13 @@ interface EmailOptions {
 }
 
 export const sendEmail = async ({ to, subject, text, html }: EmailOptions) => {
-    // Trim credentials to avoid whitespace issues
-    const user = process.env.EMAIL_USER?.trim();
-    const pass = process.env.EMAIL_PASS?.trim();
-
-    if (!user || !pass) {
-        console.warn('⚠️ Email credentials missing. Please check .env');
-        throw new Error("Email credentials missing on server.");
+    if (!transporter) {
+        console.warn('⚠️ Cannot send email: Transporter not initialized. Check .env');
+        throw new Error("Email service is not configured.");
     }
 
     const mailOptions = {
-        from: `"Voting System" <${process.env.SENDER_EMAIL || user}>`,
+        from: `"Voting System" <${process.env.SENDER_EMAIL || process.env.EMAIL_USER}>`,
         to,
         subject,
         text,

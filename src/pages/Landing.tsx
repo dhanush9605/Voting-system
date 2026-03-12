@@ -92,9 +92,7 @@ const Landing = () => {
           >
             <div className="container mx-auto px-6 h-20 flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2 group">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <CheckSquare className="w-6 h-6 text-white" />
-                </div>
+                <img src="/logo.png" alt={SITE_NAME} className="w-10 h-10 object-contain" />
                 <span className="font-bold text-lg tracking-tight text-foreground group-hover:opacity-80 transition-opacity">{SITE_NAME}</span>
               </Link>
 
@@ -665,11 +663,7 @@ const Landing = () => {
           <footer className="relative z-10 py-12">
             <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-md shadow-blue-500/20">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-white">
-                    <path d="M16.5 3H20.5L12 21L3.5 3H7.5L12 13.5L16.5 3Z" fill="currentColor" />
-                  </svg>
-                </div>
+                <img src="/logo.png" alt={SITE_NAME} className="w-8 h-8 object-contain" />
                 <span className="font-bold text-lg">{SITE_NAME}</span>
               </div>
 

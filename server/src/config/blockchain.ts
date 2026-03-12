@@ -23,18 +23,25 @@ let contract: ethers.Contract | null = null;
 let wallet: ethers.Wallet | null = null;
 
 if (RPC_URL && PRIVATE_KEY) {
-    try {
-        const provider = new ethers.JsonRpcProvider(RPC_URL);
-        wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+    // Check if PRIVATE_KEY is a placeholder or not a valid hex string
+    const isPlaceholder = PRIVATE_KEY.includes('your_wallet_private_key') || PRIVATE_KEY.length < 32;
+    
+    if (isPlaceholder) {
+        console.warn("⚠️ Blockchain PRIVATE_KEY appears to be a placeholder or invalid. Blockchain features disabled.");
+    } else {
+        try {
+            const provider = new ethers.JsonRpcProvider(RPC_URL);
+            wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-        if (CONTRACT_ADDRESS) {
-            contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
-            console.log("✅ Blockchain connected successfully");
-        } else {
-            console.warn("⚠️ Blockchain wallet connected, but CONTRACT_ADDRESS is missing. Voting functions disabled.");
+            if (CONTRACT_ADDRESS && !CONTRACT_ADDRESS.includes('your_deployed_contract_address')) {
+                contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+                console.log("✅ Blockchain connected successfully");
+            } else {
+                console.warn("⚠️ Blockchain wallet connected, but CONTRACT_ADDRESS is missing or placeholder. Voting functions disabled.");
+            }
+        } catch (error) {
+            console.error("❌ Failed to connect to blockchain:", error);
         }
-    } catch (error) {
-        console.error("❌ Failed to connect to blockchain:", error);
     }
 } else {
     console.warn("⚠️ Blockchain credentials (RPC_URL or PRIVATE_KEY) missing in .env. Blockchain features will be disabled.");

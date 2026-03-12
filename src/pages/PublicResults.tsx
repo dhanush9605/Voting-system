@@ -113,7 +113,7 @@ const PublicResults = () => {
               </div>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Student Council Election 2025
+              {electionData?.title || "Student Council Election 2025"}
             </h1>
             <p className="text-muted-foreground">
               Results published on {publishedAt && new Date(publishedAt).toLocaleDateString('en-US', {

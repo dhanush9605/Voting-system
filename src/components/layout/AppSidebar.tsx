@@ -91,11 +91,9 @@ export function AppSidebar() {
       <MeshGradientBackground className="absolute inset-0" />
 
       {/* Logo */}
-      <div className="relative z-10 flex items-center gap-3 px-4 py-6 border-b border-border/40 min-h-[85px]">
-        <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-          <CheckSquare className="w-5 h-5 text-white" />
-        </div>
-        {!isCollapsed && (
+        <div className="relative z-10 flex items-center gap-3 px-4 py-6 border-b border-border/40 min-h-[85px]">
+          <img src="/logo.png" alt={SITE_NAME} className="w-10 h-10 object-contain" />
+          {!isCollapsed && (
           <div className="flex flex-col overflow-hidden animate-in fade-in slide-in-from-left-2">
             <span className="font-bold text-lg text-foreground truncate">{SITE_NAME}</span>
             <span className="text-[10px] text-muted-foreground truncate uppercase tracking-widest">{SITE_CONFIG.tagline}</span>

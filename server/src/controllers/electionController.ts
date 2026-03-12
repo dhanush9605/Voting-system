@@ -5,6 +5,7 @@ import User, { UserRole } from '../models/User';
 import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../middleware/authMiddleware';
 import Notification from '../models/Notification';
+import { sendEmail } from '../utils/email';
 
 // @desc    Get public election results
 // @route   GET /api/election/results
@@ -59,6 +60,7 @@ export const getPublicElectionResults = async (req: Request, res: Response) => {
         results.sort((a, b) => (b.votes || 0) - (a.votes || 0));
 
         res.json({
+            title: election.title,
             publishedAt: election.publishedAt,
             totalVotes,
             winner: (() => {
@@ -111,6 +113,9 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
         let election = await Election.findOne();
 
         if (election) {
+            // Snapshot BEFORE modifying, to detect first-time creation
+            const wasFirstSetup = !election.startDate;
+
             election.title = title || election.title;
             election.description = description || election.description;
             election.startDate = startDate || election.startDate;
@@ -118,8 +123,8 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
 
             const updatedElection = await election.save();
 
-            // Broadcast Notification
-            const voters = await User.find({ role: UserRole.VOTER });
+            // Broadcast In-App Notification
+            const voters = await User.find({ role: UserRole.VOTER }).select('name email');
             const notifications = voters.map(voter => ({
                 user: voter._id,
                 type: 'info',
@@ -129,6 +134,49 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
             if (notifications.length > 0) {
                 await Notification.insertMany(notifications);
             }
+
+            // Send Bulk Email to All Voters (Fire & Forget)
+            const emailSubject = wasFirstSetup
+                ? `📢 Election Announced: ${election.title}`
+                : `📢 Election Updated: ${election.title}`;
+
+            const startFormatted = new Date(election.startDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+            const endFormatted = new Date(election.endDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+            const frontendUrl = process.env.FRONTEND_URL || 'https://voting2026.vercel.app';
+
+            Promise.allSettled(
+                voters.map(voter =>
+                    sendEmail({
+                        to: voter.email,
+                        subject: emailSubject,
+                        html: `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; color: #1a1a1a; border: 1px solid #e5e7eb; border-radius: 12px;">
+                                <div style="text-align: center; margin-bottom: 24px;">
+                                    <img src="${frontendUrl}/logo.png" alt="Logo" style="height: 48px; object-fit: contain;" />
+                                </div>
+                                <h2 style="color: #0F766E; text-align: center; margin-bottom: 4px;">${emailSubject}</h2>
+                                <p style="text-align: center; color: #6b7280; margin-bottom: 24px;">You have a new update about the upcoming election.</p>
+                                <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                                    <p style="margin: 0 0 8px;"><strong>Election:</strong> ${title || election.title}</p>
+                                    <p style="margin: 0 0 8px; color: #374151;">${description || election.description}</p>
+                                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 12px 0;" />
+                                    <p style="margin: 0 0 6px;">🗓️ <strong>Voting Opens:</strong> ${startFormatted}</p>
+                                    <p style="margin: 0;">🔒 <strong>Voting Closes:</strong> ${endFormatted}</p>
+                                </div>
+                                <p>Hi <strong>${voter.name}</strong>, make sure you are verified and ready to cast your vote before the deadline.</p>
+                                <div style="text-align: center; margin: 28px 0;">
+                                    <a href="${frontendUrl}/voter/dashboard" style="background-color: #0F766E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px;">Go to Dashboard</a>
+                                </div>
+                                <p style="font-size: 11px; color: #9ca3af; text-align: center;">This is an automated notification from the Voting System.</p>
+                            </div>
+                        `
+                    }).catch(err => console.error(`Email failed for ${voter.email}:`, err))
+                )
+            ).then(results => {
+                const failed = results.filter(r => r.status === 'rejected').length;
+                if (failed > 0) console.warn(`⚠️ ${failed} election-update emails failed to send.`);
+                else console.log(`✅ Election update emails sent to ${voters.length} voters.`);
+            });
 
             res.json(updatedElection);
         } else {
@@ -168,9 +216,9 @@ export const togglePublishResults = async (req: Request, res: Response) => {
 
         await election.save();
 
-        // Broadcast Notification
+        // Broadcast In-App Notification & Email
         if (publish) {
-            const voters = await User.find({ role: UserRole.VOTER });
+            const voters = await User.find({ role: UserRole.VOTER }).select('name email');
             const notifications = voters.map(voter => ({
                 user: voter._id,
                 type: 'success',
@@ -180,6 +228,54 @@ export const togglePublishResults = async (req: Request, res: Response) => {
             if (notifications.length > 0) {
                 await Notification.insertMany(notifications);
             }
+
+            // Load winner info for email
+            const candidates = await Candidate.find().sort({ voteCount: -1 });
+            const totalVotes = candidates.reduce((acc, c) => acc + (c.voteCount || 0), 0) + (election.abstainCount || 0);
+            const topCandidate = candidates[0];
+            const isTie = candidates.length > 1 && topCandidate?.voteCount === candidates[1]?.voteCount;
+            const winnerLine = candidates.length === 0
+                ? 'No candidate data available.'
+                : isTie
+                    ? '🤝 It\'s a tie! Check the results page for full details.'
+                    : `🏆 <strong>${topCandidate.name}</strong> (${topCandidate.party}) leads with <strong>${topCandidate.voteCount}</strong> votes.`;
+
+            const frontendUrl = process.env.FRONTEND_URL || 'https://voting2026.vercel.app';
+
+            // Send Bulk Email to All Voters (Fire & Forget)
+            Promise.allSettled(
+                voters.map(voter =>
+                    sendEmail({
+                        to: voter.email,
+                        subject: `🎉 Election Results Are Live: ${election.title}`,
+                        html: `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 24px; color: #1a1a1a; border: 1px solid #e5e7eb; border-radius: 12px;">
+                                <div style="text-align: center; margin-bottom: 24px;">
+                                    <img src="${frontendUrl}/logo.png" alt="Logo" style="height: 48px; object-fit: contain;" />
+                                </div>
+                                <div style="background: linear-gradient(135deg, #0F766E, #0d9488); border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 20px;">
+                                    <h2 style="color: white; margin: 0 0 4px;">🎉 Results Are Live!</h2>
+                                    <p style="color: #ccfbf1; margin: 0; font-size: 14px;">${election.title}</p>
+                                </div>
+                                <p>Hi <strong>${voter.name}</strong>,</p>
+                                <p>The election results have officially been published. Thank you for participating!</p>
+                                <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center;">
+                                    <p style="margin: 0 0 8px; font-size: 15px;">${winnerLine}</p>
+                                    <p style="margin: 0; color: #6b7280; font-size: 13px;">Total votes cast: <strong>${totalVotes}</strong></p>
+                                </div>
+                                <div style="text-align: center; margin: 28px 0;">
+                                    <a href="${frontendUrl}/results/public" style="background-color: #0F766E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px;">View Full Results</a>
+                                </div>
+                                <p style="font-size: 11px; color: #9ca3af; text-align: center;">This is an automated notification from the Voting System.</p>
+                            </div>
+                        `
+                    }).catch(err => console.error(`Results email failed for ${voter.email}:`, err))
+                )
+            ).then(results => {
+                const failed = results.filter(r => r.status === 'rejected').length;
+                if (failed > 0) console.warn(`⚠️ ${failed} results emails failed to send.`);
+                else console.log(`✅ Results published emails sent to ${voters.length} voters.`);
+            });
         }
 
         res.json({

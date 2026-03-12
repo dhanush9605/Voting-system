@@ -116,7 +116,6 @@ const VotePage = () => {
   }
 
 
-
   // Check if election is active
   if (!isElectionActive) {
     return (
@@ -168,11 +167,11 @@ const VotePage = () => {
       };
 
       setVoteReceipt(receipt);
-      updateUser({ hasVoted: true });
+      updateUser({ hasVoted: true, votedAt: receipt.timestamp });
 
       toast({
         title: "Vote submitted successfully!",
-        description: `You voted for ${selectedCandidate?.name}`,
+        description: isAbstaining ? "Your abstention has been recorded." : `You voted for ${selectedCandidate?.name}`,
       });
     } catch (error: any) {
       toast({

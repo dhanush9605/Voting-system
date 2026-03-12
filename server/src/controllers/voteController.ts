@@ -102,6 +102,7 @@ export const castVote = async (req: AuthRequest, res: Response) => {
 
                 // 1. Revert user status
                 user.hasVoted = false;
+                user.votedAt = undefined; // Also reset votedAt to avoid stale timestamp
                 await user.save();
 
                 // 2. Decrement candidate vote count

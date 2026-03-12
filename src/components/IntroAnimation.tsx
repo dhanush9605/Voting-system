@@ -1,6 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
-import { CheckSquare } from "lucide-react";
 
 interface IntroAnimationProps {
     onComplete: () => void;
@@ -74,14 +73,13 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
             </AnimatePresence>
 
             <div className="relative z-10 flex flex-col items-center">
-                {/* Logo Reveal */}
                 <motion.div
                     initial={{ scale: 0, rotate: -180, opacity: 0 }}
                     animate={{ scale: 1, rotate: 0, opacity: 1 }}
                     transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
-                    className="w-28 h-28 mb-8 rounded-3xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-[0_0_50px_rgba(79,70,229,0.5)] border border-white/20"
+                    className="w-28 h-28 mb-8 rounded-3xl bg-white/10 flex items-center justify-center shadow-[0_0_50px_rgba(79,70,229,0.5)] border border-white/20 overflow-hidden px-4"
                 >
-                    <CheckSquare className="w-14 h-14 text-white drop-shadow-lg" />
+                    <img src="/logo.png" alt="Logo" className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
                 </motion.div>
 
                 {/* Decoding Text */}

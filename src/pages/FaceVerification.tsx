@@ -85,7 +85,7 @@ export default function FaceVerification() {
                         <p className="text-muted-foreground mb-6">
                             Thank you for verifying your identity. You are now eligible to cast your vote.
                         </p>
-                        <Button onClick={() => navigate('/dashboard')} variant="hero" size="lg">
+                        <Button onClick={() => navigate('/voter/dashboard')} variant="hero" size="lg">
                             Go to Dashboard
                         </Button>
                     </CardContent>
@@ -123,7 +123,7 @@ export default function FaceVerification() {
 
                             <FaceCapture onCapture={handleFaceCapture} />
 
-                            <Button variant="ghost" className="w-full" onClick={() => navigate('/dashboard')}>
+                            <Button variant="ghost" className="w-full" onClick={() => navigate('/voter/dashboard')}>
                                 Cancel
                             </Button>
                         </div>

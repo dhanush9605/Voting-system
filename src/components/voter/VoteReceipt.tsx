@@ -19,11 +19,46 @@ const VoteReceipt: React.FC<VoteReceiptProps> = ({
     voterImage,
     electionName
 }) => {
-    const handlePrint = () => {
-        const originalTitle = document.title;
-        document.title = `Vote Receipt - ${voterName}`;
-        window.print();
-        document.title = originalTitle;
+    const handleDownload = () => {
+        const element = document.getElementById('printable-receipt-card');
+        if (!element) return;
+
+        const opt = {
+            margin: 0.2,
+            filename: `Vote_Receipt_${voterName.replace(/\s+/g, '_')}.pdf`,
+            image: { type: 'png' as const, quality: 1.0 },
+            html2canvas: {
+                scale: 3,
+                useCORS: true,
+                letterRendering: true,
+                logging: false,
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc: Document) => {
+                    // Force-resolve all CSS custom property colors to actual computed values
+                    // so html2canvas renders them correctly (it can't resolve CSS vars on its own)
+                    const clonedEl = clonedDoc.getElementById('printable-receipt-card');
+                    if (!clonedEl) return;
+                    const allElements = clonedEl.querySelectorAll('*');
+                    allElements.forEach((el) => {
+                        const computed = window.getComputedStyle(el as Element);
+                        const htmlEl = el as HTMLElement;
+                        // Apply computed colors directly as inline styles
+                        const color = computed.color;
+                        const bg = computed.backgroundColor;
+                        const border = computed.borderColor;
+                        if (color) htmlEl.style.color = color;
+                        if (bg && bg !== 'rgba(0, 0, 0, 0)') htmlEl.style.backgroundColor = bg;
+                        if (border && border !== 'rgba(0, 0, 0, 0)') htmlEl.style.borderColor = border;
+                    });
+                }
+            },
+            jsPDF: { unit: 'in' as const, format: 'letter' as const, orientation: 'portrait' as const }
+        };
+
+        // @ts-ignore
+        import('html2pdf.js').then((html2pdf) => {
+            html2pdf.default().from(element).set(opt).save();
+        });
     };
 
     // Safe date formatting to prevent "Invalid Date"
@@ -117,7 +152,16 @@ const VoteReceipt: React.FC<VoteReceiptProps> = ({
                         <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-semibold mt-2">Authenticated Platform Record</p>
                     </CardHeader>
 
-                    <CardContent className="p-8 space-y-8">
+                    <CardContent className="p-8 space-y-8 relative">
+                        {/* Verification Badge */}
+                        <div className="absolute top-4 right-4 rotate-12 opacity-80 pointer-events-none">
+                            <div className="border-4 border-success/30 rounded-full p-2 flex flex-col items-center justify-center w-24 h-24">
+                                <CheckCircle className="w-8 h-8 text-success" />
+                                <span className="text-[8px] font-black text-success uppercase tracking-tighter">Verified</span>
+                                <span className="text-[10px] font-black text-success uppercase tracking-widest leading-none">VØRA</span>
+                            </div>
+                        </div>
+
                         <div className="space-y-6 text-center">
                             <div className="flex flex-col gap-1.5">
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em]">Voter Name</span>
@@ -159,7 +203,7 @@ const VoteReceipt: React.FC<VoteReceiptProps> = ({
 
                         <div className="pt-8 border-t border-dashed border-border flex flex-col items-center gap-5 print-hidden text-center">
                             <Button
-                                onClick={handlePrint}
+                                onClick={handleDownload}
                                 className="w-full bg-foreground text-background hover:bg-foreground/90 font-black shadow-xl h-14 text-sm uppercase tracking-widest"
                             >
                                 <Download className="w-5 h-5 mr-2" />

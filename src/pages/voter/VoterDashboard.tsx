@@ -21,7 +21,7 @@ const VoterDashboard = () => {
   });
 
   const isAdminVerified = user?.verificationStatus === 'verified';
-  const isFaceVerified = true;
+  const isFaceVerified = user?.isFaceVerified;
   const isEligibleToVote = isAdminVerified;
   const isPending = user?.verificationStatus === 'pending';
   const hasVoted = user?.hasVoted;
@@ -85,20 +85,10 @@ const VoterDashboard = () => {
                   </Button>
                 </Link>
               )}
-              {/* Add Verification Link if NOT face verified */}
-              {!isFaceVerified && !hasVoted && (
-                <Link to="/verify-face" className="inline-block mt-4">
-                  <Button variant="outline" className="border-primary text-primary hover:bg-primary/10 hover:scale-105 transition-transform">
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Verify Face Identity
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              )}
-              {isFaceVerified && !isAdminVerified && !hasVoted && (
+              {!isAdminVerified && !hasVoted && (
                 <div className="mt-4 flex items-center gap-2 text-sm text-warning font-medium">
                   <Clock className="w-4 h-4" />
-                  Face verified. Awaiting admin approval...
+                  Awaiting admin approval...
                 </div>
               )}
             </div>

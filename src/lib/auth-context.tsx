@@ -50,12 +50,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = await api.post('/auth/login', { email, password, rememberMe, faceDescriptor });
 
-      if (data.role !== role && role !== 'admin') { // Admin can login anywhere usually, or restrict
-        // For strict role checking:
-        if (data.role !== role) {
-          await api.post('/auth/logout');
-          throw new Error(`This account is not registered as a ${role}`);
-        }
+      if (role !== 'admin' && data.role !== role) {
+        await api.post('/auth/logout');
+        throw new Error(`This account is not registered as a ${role}`);
       }
 
       setState({
