@@ -173,7 +173,7 @@ const VotePage = () => {
         title: "Vote submitted successfully!",
         description: isAbstaining ? "Your abstention has been recorded." : `You voted for ${selectedCandidate?.name}`,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Failed to submit vote",
         description: error.response?.data?.error || error.response?.data?.message || "Please try again.",

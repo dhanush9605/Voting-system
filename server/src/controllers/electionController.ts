@@ -165,7 +165,7 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
                                 </div>
                                 <p>Hi <strong>${voter.name}</strong>, make sure you are verified and ready to cast your vote before the deadline.</p>
                                 <div style="text-align: center; margin: 28px 0;">
-                                    <a href="${frontendUrl}/voter/dashboard" style="background-color: #0F766E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px;">Go to Dashboard</a>
+                                    <a href="${frontendUrl}/login" style="background-color: #0F766E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px;">Sign In to Vote</a>
                                 </div>
                                 <p style="font-size: 11px; color: #9ca3af; text-align: center;">This is an automated notification from the Voting System.</p>
                             </div>
@@ -264,7 +264,7 @@ export const togglePublishResults = async (req: Request, res: Response) => {
                                     <p style="margin: 0; color: #6b7280; font-size: 13px;">Total votes cast: <strong>${totalVotes}</strong></p>
                                 </div>
                                 <div style="text-align: center; margin: 28px 0;">
-                                    <a href="${frontendUrl}/results/public" style="background-color: #0F766E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px;">View Full Results</a>
+                                    <a href="${frontendUrl}/login" style="background-color: #0F766E; color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px;">Sign In to View Results</a>
                                 </div>
                                 <p style="font-size: 11px; color: #9ca3af; text-align: center;">This is an automated notification from the Voting System.</p>
                             </div>
