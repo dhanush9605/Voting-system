@@ -56,7 +56,8 @@ app.get('/', (req, res) => {
     res.send('Voting System API is running');
 });
 
-// Serve static assets in production
+// Serve static assets in production - Handled by Vercel routing
+/*
 import path from 'path';
 if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
     // Set static folder
@@ -66,8 +67,11 @@ if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
         res.sendFile(path.resolve(__dirname, '../../', 'dist', 'index.html'));
     });
 }
+*/
 
-if (require.main === module) {
+const isMainModule = import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('index.ts');
+
+if (isMainModule && process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
