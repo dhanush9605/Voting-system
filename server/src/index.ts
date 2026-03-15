@@ -16,10 +16,16 @@ import electionRoutes from './routes/electionRoutes';
 export const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to Database
-if (process.env.NODE_ENV !== 'test') {
-    connectDB();
-}
+// Database Connection Middleware (Ensures DB is ready before request hits routes)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        console.error('Database connection failed for request:', req.path);
+        res.status(503).json({ message: 'Database connecting, please try again in a few seconds' });
+    }
+});
 
 app.use(cors({
     origin: [
@@ -69,3 +75,5 @@ if (require.main === module && process.env.NODE_ENV !== 'production') {
         console.log(`Server is running on port ${PORT}`);
     });
 }
+
+export default app;
