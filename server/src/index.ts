@@ -1,25 +1,41 @@
-import express from 'express';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+dotenv.config();
+console.log('TRACE: dotenv.config() called');
+
+import express from 'express';
+console.log('TRACE: express imported');
+import cors from 'cors';
+console.log('TRACE: cors imported');
+import cookieParser from 'cookie-parser';
+console.log('TRACE: cookie-parser imported');
 import connectDB from './config/db';
+console.log('TRACE: connectDB imported');
 
 import authRoutes from './routes/authRoutes';
+console.log('TRACE: authRoutes imported');
+import uploadRoutes from './routes/uploadRoutes';
+console.log('TRACE: uploadRoutes imported');
+import adminRoutes from './routes/adminRoutes';
+console.log('TRACE: adminRoutes imported');
+import candidateRoutes from './routes/candidateRoutes';
+console.log('TRACE: candidateRoutes imported');
+import voteRoutes from './routes/voteRoutes';
+console.log('TRACE: voteRoutes imported');
+import electionRoutes from './routes/electionRoutes';
+console.log('TRACE: electionRoutes imported');
 
-dotenv.config();
-
-
-console.log('Backend Index: Initializing...');
 export const app = express();
+console.log('TRACE: app initialized');
+
 const PORT = process.env.PORT || 5000;
 
-console.log('Backend Index: Connecting to DB...');
 // Connect to Database
 if (process.env.NODE_ENV !== 'test') {
+    console.log('TRACE: Calling connectDB()');
     connectDB();
 }
-console.log('Backend Index: Configuring middlewares...');
 
+console.log('TRACE: Configuring CORS');
 app.use(cors({
     origin: [
         'http://localhost:5173',
@@ -32,22 +48,19 @@ app.use(cors({
     ],
     credentials: true
 }));
+
+console.log('TRACE: Configuring express.json');
 app.use(express.json());
+console.log('TRACE: Configuring express.urlencoded');
+app.use(express.urlencoded({ extended: true }));
+console.log('TRACE: Configuring cookieParser');
 app.use(cookieParser());
 
 // Trust Proxy (Required for Secure Coookies on Render/Heroku)
+console.log('TRACE: Configuring trust proxy');
 app.set('trust proxy', 1);
 
-
-
-
-
-import uploadRoutes from './routes/uploadRoutes';
-import adminRoutes from './routes/adminRoutes';
-import candidateRoutes from './routes/candidateRoutes';
-import voteRoutes from './routes/voteRoutes';
-import electionRoutes from './routes/electionRoutes';
-
+console.log('TRACE: Registering routes');
 app.use('/api/auth', authRoutes);
 app.use('/api/uploads', uploadRoutes);
 app.use('/api/admin', adminRoutes);
@@ -59,29 +72,18 @@ app.get('/', (req, res) => {
     res.send('Voting System API is running');
 });
 
-console.log('Backend Index: Routes configured.');
-
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error('SERVER ERROR:', err);
-    res.status(500).json({
-        message: 'Internal Server Error',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+    console.error('SERVER ERROR REQ:', req.path, 'ERR:', err);
+    if (!res.headersSent) {
+        res.status(500).json({
+            message: 'Internal Server Error',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
+        });
+    }
 });
 
-// Serve static assets in production - Handled by Vercel routing
-/*
-import path from 'path';
-if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging') {
-    // Set static folder
-    app.use(express.static(path.join(__dirname, '../../dist')));
-
-    app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, '../../', 'dist', 'index.html'));
-    });
-}
-*/
+console.log('TRACE: Setup complete.');
 
 if (require.main === module && process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
