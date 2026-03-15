@@ -9,13 +9,16 @@ import authRoutes from './routes/authRoutes';
 dotenv.config();
 
 
+console.log('Backend Index: Initializing...');
 export const app = express();
 const PORT = process.env.PORT || 5000;
 
+console.log('Backend Index: Connecting to DB...');
 // Connect to Database
 if (process.env.NODE_ENV !== 'test') {
     connectDB();
 }
+console.log('Backend Index: Configuring middlewares...');
 
 app.use(cors({
     origin: [
@@ -54,6 +57,17 @@ app.use('/api/election', electionRoutes);
 
 app.get('/', (req, res) => {
     res.send('Voting System API is running');
+});
+
+console.log('Backend Index: Routes configured.');
+
+// Global Error Handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('SERVER ERROR:', err);
+    res.status(500).json({
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 // Serve static assets in production - Handled by Vercel routing
