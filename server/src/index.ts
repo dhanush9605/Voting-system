@@ -69,9 +69,7 @@ if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
 }
 */
 
-const isMainModule = import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith('index.ts');
-
-if (isMainModule && process.env.NODE_ENV !== 'production') {
+if (require.main === module && process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
