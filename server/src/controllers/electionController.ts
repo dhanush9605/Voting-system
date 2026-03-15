@@ -136,9 +136,17 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
             }
 
             // Send Bulk Email to All Voters (Fire & Forget)
-            const emailSubject = wasFirstSetup
-                ? `📢 Election Announced: ${election.title}`
-                : `📢 Election Updated: ${election.title}`;
+            // IDEMPOTENCY: Cooldown to prevent duplicate emails from retries or double-clicks
+            const COOLDOWN_MS = 60 * 1000;
+            const canSendEmail = !election.lastEmailSentAt || (new Date().getTime() - new Date(election.lastEmailSentAt).getTime() > COOLDOWN_MS);
+
+            if (canSendEmail) {
+                election.lastEmailSentAt = new Date();
+                await election.save();
+
+                const emailSubject = wasFirstSetup
+                    ? `📢 Election Announced: ${election.title}`
+                    : `📢 Election Updated: ${election.title}`;
 
             const startFormatted = new Date(election.startDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
             const endFormatted = new Date(election.endDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
@@ -177,6 +185,9 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
                 if (failed > 0) console.warn(`⚠️ ${failed} election-update emails failed to send.`);
                 else console.log(`✅ Election update emails sent to ${voters.length} voters.`);
             });
+            } else {
+                console.log('📬 Skipping duplicate election update email (Cooldown active)');
+            }
 
             res.json(updatedElection);
         } else {
@@ -207,6 +218,7 @@ export const togglePublishResults = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Election not found' });
         }
 
+        const alreadyPublished = election.resultsPublished;
         election.resultsPublished = publish;
         if (publish) {
             election.publishedAt = new Date();
@@ -217,7 +229,8 @@ export const togglePublishResults = async (req: Request, res: Response) => {
         await election.save();
 
         // Broadcast In-App Notification & Email
-        if (publish) {
+        // IDEMPOTENCY: Only send emails if it's the FIRST time publishing
+        if (publish && !alreadyPublished) {
             const voters = await User.find({ role: UserRole.VOTER }).select('name email');
             const notifications = voters.map(voter => ({
                 user: voter._id,

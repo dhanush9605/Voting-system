@@ -33,6 +33,9 @@ const electionSchema = new mongoose.Schema({
     abstainCount: {
         type: Number,
         default: 0
+    },
+    lastEmailSentAt: {
+        type: Date
     }
 }, {
     timestamps: true
