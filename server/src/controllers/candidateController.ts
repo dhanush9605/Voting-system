@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Candidate from '../models/Candidate';
+import { contract } from '../config/blockchain';
 
 // @desc    Create a new candidate
 // @route   POST /api/candidates
@@ -19,7 +20,7 @@ export const createCandidate = async (req: Request, res: Response) => {
 
         // --- BLOCKCHAIN INTEGRATION ---
         try {
-            const { contract } = await import('../config/blockchain');
+            // Remove dynamic import and use static import
             if (contract) {
                 console.log(`🔗 Adding candidate ${candidate.name} to blockchain...`);
                 // Note: mongoDB _id is an object, cast to string

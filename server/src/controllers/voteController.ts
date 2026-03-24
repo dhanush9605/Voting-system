@@ -4,6 +4,7 @@ import User, { VerificationStatus } from '../models/User';
 import Candidate from '../models/Candidate';
 import Election from '../models/Election';
 import { AuthRequest } from '../middleware/authMiddleware';
+import { contract, wallet } from '../config/blockchain';
 
 // @desc    Cast a vote
 // @route   POST /api/vote
@@ -79,7 +80,7 @@ export const castVote = async (req: AuthRequest, res: Response) => {
 
         if (candidateId !== 'abstain') {
             try {
-                const { contract } = await import('../config/blockchain');
+                // Remove dynamic import and use static import
 
                 if (!contract) {
                     throw new Error("Blockchain not configured");
@@ -153,7 +154,7 @@ export const castVote = async (req: AuthRequest, res: Response) => {
 export const verifyVoteTransaction = async (req: Request, res: Response) => {
     try {
         const { hash } = req.params;
-        const { wallet } = await import('../config/blockchain');
+        // Remove dynamic import and use static import
 
         if (!wallet || !wallet.provider) {
             res.status(503).json({ message: 'Blockchain service unavailable' });
