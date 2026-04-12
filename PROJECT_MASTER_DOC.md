@@ -112,9 +112,11 @@ VITE_API_URL=http://localhost:5000/api
 2.  **Admin Integration**: Updated `candidateController.ts`. Now, when an Admin creates a candidate, it automatically calls `contract.addCandidate()` on the blockchain.
 3.  **Voter Integration**: Updated `voteController.ts`. When a User votes, the server verifies them in MongoDB, then sends a transaction to `contract.vote()` on the blockchain.
 
-**Phase 5: Verification**
-1.  **Manual Testing**: Verified that transactions appear on Etherscan after voting.
-2.  **Git Backup**: Pushed all new feature code (smart contracts and backend logic) to GitHub.
+**Phase 6: Multi-Election & Notifications**
+1. **Dynamic Elections**: Created migration script `migrate-to-multi-election.ts` to transform the database into a multi-session structure. 
+2. **Notification Logic**: Implemented `Notification.ts` model and related routes to provide real-time user feedback.
+3. **API Expansion**: Comprehensive updates to `adminRoutes.ts` and `authRoutes.ts` to support detailed dashboard stats and notification management.
+4. **Documentation**: Overhauled `README.md` and `README-DEPLOY.md` to move away from placeholders and mock descriptions toward a production-ready manual.
 
 ---
 
