@@ -1,52 +1,48 @@
-# CampusVote Deployment & Runbook
+# 🚀 Mission: Vora Deployment
+Welcome, Agent. Your mission, should you choose to accept it, is to deploy the world's most secure hybrid voting system. Follow these instructions precisely to ensure a successful launch.
 
-## Prerequisites
-- Node.js (v14+)
-- MongoDB (Running locally or Atlas URI)
+## 🛠️ Step 1: Prepare the Gear (Prerequisites)
+- **Node.js**: The engine (v18+ recommended).
+- **MongoDB**: Our secure warehouse (Atlas URI or local).
+- **Sepolia ETH**: Fuel for the blockchain (Get it from a faucet).
 
-## Environment Variables
-Create a `.env` file in the `server` directory with the following:
+## 📡 Step 2: Establish the Signal (.env Setup)
+Create a `.env` file in the `server` directory. This is your secret frequency:
 
 ```env
 PORT=5000
 MONGO_URI=mongodb+srv://... (or local)
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
+JWT_SECRET=your_super_secret_key
+JWT_REFRESH_SECRET=your_other_secret_key
 NODE_ENV=development
 
-# Blockchain Integration (Alchemy/Sepolia)
+# Blockchain Intel (Alchemy/Sepolia)
 SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/...
 PRIVATE_KEY=your_relay_wallet_private_key
 CONTRACT_ADDRESS=0x...
 ```
 
-## Backend Setup
-1. Navigate to server directory: `cd server`
-2. Install dependencies: `npm install`
-3. Start development server: `npm run dev`
-4. Run tests: `npm test`
+## 🏗️ Step 3: Build the Foundation (Backend)
+1. `cd server`
+2. `npm install` (Gathering intel...)
+3. `npm run dev` (Ignition! 🚀)
 
-## Frontend Setup
-1. Navigate to root directory.
-2. Install dependencies: `npm install`
-3. Start development server: `npm run dev`
+## 🎨 Step 4: Paint the Target (Frontend)
+1. Return to the root.
+2. `npm install`
+3. `npm run dev` (Visuals online! 💻)
 
-## API Documentation
-- **OpenAPI Spec**: `openapi.yaml` (in root)
-- **Postman Collection**: `postman_collection.json` (in root) - Import this into Postman to test APIs.
+## ⛓️ Step 5: Secure the Chain (Smart Contracts)
+If you're deploying your own contract:
+1. `cd smart-contracts`
+2. `npx hardhat compile`
+3. `npx hardhat run scripts/deploy.ts --network sepolia` 
 
-## Features
-- **Biometric Enrollment**: `/api/auth/register` - Real-time liveness check and face reference capture.
-- **Authentication**: Secure JWT-based auth with face verification checkpoints.
-- **On-Chain Voting**: Relayed transactions to Ethereum Sepolia via a master wallet provider.
-- **Notifications**: Real-time user feedback system for election milestones.
-- **Multi-Election**: Dynamic session management for recurring campus votes.
+## ☁️ Step 6: Go Global (Vercel)
+The project is "Serverless-ready":
+1. Connect your repo to Vercel.
+2. Add all `.env` variables to Vercel Settings.
+3. Push to `main`. Mission complete.
 
-## Deployment (Vercel)
-The project is configured for Vercel deployment (see `vercel.json`):
-1. **Root**: Connect your GitHub repository to Vercel.
-2. **Environment**: Add all `.env` variables in the Vercel project settings.
-3. **Deploy**: Push to `main` for automatic deployment of both Frontend (Vite) and API (Serverless functions).
-
-## Testing
-Integration tests are located in `server/src/tests`. Run with `npm test` inside `server/`.
+---
+*This document will self-destruct if you accidentally share your PRIVATE_KEY. (Not really, but seriously, keep it secret.)*
