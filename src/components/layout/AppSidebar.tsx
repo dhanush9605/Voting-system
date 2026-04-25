@@ -14,7 +14,8 @@ import {
   User,
   FileCheck,
   Menu,
-  X
+  X,
+  CalendarRange
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -46,6 +47,7 @@ const adminNavSections: NavSection[] = [
     label: "MANAGEMENT",
     items: [
       { title: "Verification", url: "/admin/verify", icon: FileCheck },
+      { title: "Elections", url: "/admin/elections", icon: CalendarRange },
       { title: "Results", url: "/admin/results", icon: BarChart3 },
       { title: "Settings", url: "/admin/settings", icon: Settings },
     ],
@@ -138,7 +140,7 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      {/* User section */}
+        {/* User section */}
       <div className="relative z-10 p-4 border-t border-border/40 bg-background/20 backdrop-blur-md">
         {!isCollapsed && user && (
           <div className="flex items-center gap-3 mb-3 px-2">

@@ -28,6 +28,12 @@ export interface IUser extends Document {
     idCardUrl?: string;
     voteTransactionHash?: string;
     votedAt?: Date;
+    votedElections: mongoose.Types.ObjectId[];
+    votingRecords: Array<{
+        electionId: mongoose.Types.ObjectId;
+        transactionHash?: string;
+        votedAt: Date;
+    }>;
     refreshToken?: string;
     createdAt: Date;
     updatedAt: Date;
@@ -50,6 +56,12 @@ const UserSchema: Schema = new Schema({
     },
     isFaceVerified: { type: Boolean, default: false },
     hasVoted: { type: Boolean, default: false },
+    votedElections: [{ type: Schema.Types.ObjectId, ref: 'Election' }],
+    votingRecords: [{
+        electionId: { type: Schema.Types.ObjectId, ref: 'Election' },
+        transactionHash: { type: String },
+        votedAt: { type: Date, default: Date.now }
+    }],
     loginAttempts: { type: Number, default: 0 },
     lockUntil: { type: Date },
     imageHash: { type: String },

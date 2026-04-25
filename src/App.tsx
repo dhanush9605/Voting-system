@@ -29,6 +29,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import CandidateManagement from "./pages/admin/CandidateManagement";
 import VoterManagement from "./pages/admin/VoterManagement";
 import ResultsManagement from "./pages/admin/ResultsManagement";
+import ElectionManagement from "./pages/admin/ElectionManagement";
 
 // Voter pages
 import VoterDashboard from "./pages/voter/VoterDashboard";
@@ -72,6 +73,7 @@ const App = () => (
               <Route path="/admin/voters" element={<VoterManagement />} />
               <Route path="/admin/verify" element={<VoterManagement />} />
               <Route path="/admin/results" element={<ResultsManagement />} />
+              <Route path="/admin/elections" element={<ElectionManagement />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
 

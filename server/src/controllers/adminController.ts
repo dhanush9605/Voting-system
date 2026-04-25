@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { UserRole } from '../models/User';
 import Notification from '../models/Notification';
 import Candidate from '../models/Candidate';
+import Settings from '../models/Settings';
 import { sendEmail } from '../utils/email';
 
 // @desc    Get all voters
@@ -134,18 +135,18 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
     try {
         const totalRegistered = await User.countDocuments({ role: UserRole.VOTER });
         const verifiedVoters = await User.countDocuments({ role: UserRole.VOTER, verificationStatus: VerificationStatus.VERIFIED });
-        const candidatesCount = await Candidate.countDocuments();
-        const election = await Election.findOne();
-        const abstainCount = election?.abstainCount || 0;
+        const activeElection = await Election.findOne({ status: 'active' });
+        const candidatesCount = activeElection ? await Candidate.countDocuments({ electionId: activeElection._id }) : 0;
+        const abstainCount = activeElection?.abstainCount || 0;
 
-        // Sum total votes from candidates + abstains
-        // Count users who have actually voted (Source of Truth for "Votes Cast")
-        const votesCast = await User.countDocuments({ role: UserRole.VOTER, hasVoted: true });
+        // Sum total votes from candidates + abstains for the active election
+        const votesCast = activeElection ? await User.countDocuments({ votedElections: activeElection._id }) : 0;
 
-        const candidates = await Candidate.find();
+        const candidates = activeElection ? await Candidate.find({ electionId: activeElection._id }) : [];
 
-        // Pie Chart Data: Votes by Party
-        const votesByParty = await Candidate.aggregate([
+        // Pie Chart Data: Votes by Party for ACTIVE election
+        const votesByParty = activeElection ? await Candidate.aggregate([
+            { $match: { electionId: activeElection._id } },
             {
                 $group: {
                     _id: "$party",
@@ -153,7 +154,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
                 }
             },
             { $project: { name: "$_id", value: 1, _id: 0 } }
-        ]);
+        ]) : [];
 
         // Bar Chart Data: Daily Registrations (Last 7 days)
         const sevenDaysAgo = new Date();
@@ -258,7 +259,19 @@ export const getDashboardStats = async (req: AuthRequest, res: Response) => {
 // @access  Private/Admin
 export const getElectionResults = async (req: AuthRequest, res: Response) => {
     try {
-        const candidates = await Candidate.find();
+        const { electionId } = req.query;
+        let query: any = {};
+        
+        if (electionId) {
+            query.electionId = electionId;
+        } else {
+            const activeElection = await Election.findOne({ status: 'active' });
+            if (activeElection) {
+                query.electionId = activeElection._id;
+            }
+        }
+
+        const candidates = await Candidate.find(query);
 
         // Calculate total votes
         const totalVotes = candidates.reduce((acc, curr) => acc + (curr.voteCount || 0), 0);
@@ -281,5 +294,45 @@ export const getElectionResults = async (req: AuthRequest, res: Response) => {
     } catch (error: any) {
         console.error('Error fetching election results:', error);
         res.status(500).json({ message: 'Error fetching results' });
+    }
+};
+
+// @desc    Get global settings
+// @route   GET /api/admin/settings
+// @access  Private/Admin
+export const getSettings = async (req: AuthRequest, res: Response) => {
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) {
+            settings = await Settings.create({});
+        }
+        res.json(settings);
+    } catch (error: any) {
+        console.error('Error fetching settings:', error);
+        res.status(500).json({ message: 'Error fetching settings' });
+    }
+};
+
+// @desc    Update global settings
+// @route   PUT /api/admin/settings
+// @access  Private/Admin
+export const updateSettings = async (req: AuthRequest, res: Response) => {
+    try {
+        const { emailNotificationsEnabled } = req.body;
+        
+        let settings = await Settings.findOne();
+        if (!settings) {
+            settings = new Settings({});
+        }
+        
+        if (emailNotificationsEnabled !== undefined) {
+            settings.emailNotificationsEnabled = emailNotificationsEnabled;
+        }
+
+        await settings.save();
+        res.json(settings);
+    } catch (error: any) {
+        console.error('Error updating settings:', error);
+        res.status(500).json({ message: 'Error updating settings' });
     }
 };

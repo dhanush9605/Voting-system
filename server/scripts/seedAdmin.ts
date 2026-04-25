@@ -12,11 +12,12 @@ const seedAdmin = async () => {
         await mongoose.connect(mongoUri);
         console.log('MongoDB Connected');
 
-        const email = 'admin@verification.com';
-        const password = process.env.ADMIN_PASSWORD || 'AdminPass123';
+        const email = 'admin@vora.com';
+        const password = process.env.ADMIN_PASSWORD;
 
-        if (!process.env.ADMIN_PASSWORD) {
-            console.warn('Warning: using default hardcoded admin password. Please set ADMIN_PASSWORD in .env');
+        if (!password) {
+            console.error('Error: ADMIN_PASSWORD must be set in .env');
+            process.exit(1);
         }
         const hashedPassword = await bcrypt.hash(password, 10);
 

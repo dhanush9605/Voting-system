@@ -8,7 +8,6 @@ const electionSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: true,
         default: 'Vote for your next student council representatives.'
     },
     startDate: {
@@ -36,6 +35,11 @@ const electionSchema = new mongoose.Schema({
     },
     lastEmailSentAt: {
         type: Date
+    },
+    status: {
+        type: String,
+        enum: ['active', 'upcoming', 'completed'],
+        default: 'active'
     }
 }, {
     timestamps: true

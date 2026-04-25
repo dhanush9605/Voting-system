@@ -17,16 +17,36 @@ const ResultsManagement = () => {
   const [confirmText, setConfirmText] = useState("");
   const [resultsData, setResultsData] = useState<any[]>([]);
   const [totalVotes, setTotalVotes] = useState(0);
+  const [electionHistory, setElectionHistory] = useState<any[]>([]);
+  const [selectedElectionId, setSelectedElectionId] = useState<string>("");
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   useEffect(() => {
     fetchResults();
     fetchPublishStatus();
-  }, []);
+  }, [selectedElectionId]);
+
+  const fetchHistory = async () => {
+    try {
+      const { data } = await api.get('/admin/elections');
+      setElectionHistory(data);
+      // Default to active or most recent
+      const active = data.find((e: any) => e.status === 'active');
+      if (active) setSelectedElectionId(active._id);
+      else if (data.length > 0) setSelectedElectionId(data[0]._id);
+    } catch (error) {
+      console.error("Failed to fetch history", error);
+    }
+  };
 
   const fetchResults = async () => {
+    if (!selectedElectionId) return;
     try {
-      const { data } = await api.get('/admin/results');
-      setTotalVotes(data.totalVotes);
+      const { data } = await api.get(`/admin/results?electionId=${selectedElectionId}`);
+      setTotalVotes(data.totalVotes || 0);
       // Add colors to results
       const coloredResults = data.results.map((r: any, index: number) => ({
         ...r,
@@ -39,11 +59,12 @@ const ResultsManagement = () => {
   };
 
   const fetchPublishStatus = async () => {
+    if (!selectedElectionId) return;
     try {
-      const { data } = await api.get('/admin/election');
-      if (data) {
-        setIsPublished(data.resultsPublished);
-        setPublishedAt(data.publishedAt);
+      const selected = electionHistory.find(e => e._id === selectedElectionId);
+      if (selected) {
+        setIsPublished(selected.resultsPublished);
+        setPublishedAt(selected.publishedAt);
       }
     } catch (error) {
       console.error("Failed to fetch election status", error);
@@ -57,11 +78,16 @@ const ResultsManagement = () => {
     }
 
     try {
-      const { data } = await api.put('/admin/election/publish', { publish: true });
+      const { data } = await api.put('/admin/election/publish', { 
+        publish: true, 
+        electionId: selectedElectionId 
+      });
       setIsPublished(data.resultsPublished);
       setPublishedAt(data.publishedAt);
       setIsPublishDialogOpen(false);
       setConfirmText("");
+      // Update history in local state too
+      setElectionHistory(prev => prev.map(e => e._id === selectedElectionId ? { ...e, resultsPublished: true, publishedAt: data.publishedAt } : e));
       toast({ title: "Results published successfully" });
     } catch (error) {
       toast({ title: "Failed to publish results", variant: "destructive" });
@@ -70,9 +96,14 @@ const ResultsManagement = () => {
 
   const handleUnpublish = async () => {
     try {
-      const { data } = await api.put('/admin/election/publish', { publish: false });
+      const { data } = await api.put('/admin/election/publish', { 
+        publish: false, 
+        electionId: selectedElectionId 
+      });
       setIsPublished(false);
       setPublishedAt(null);
+      // Update history
+      setElectionHistory(prev => prev.map(e => e._id === selectedElectionId ? { ...e, resultsPublished: false, publishedAt: undefined } : e));
       toast({ title: "Results unpublished" });
     } catch (error) {
       toast({ title: "Failed to unpublish results", variant: "destructive" });
@@ -83,9 +114,26 @@ const ResultsManagement = () => {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Results Management</h1>
-          <p className="text-muted-foreground mt-1">View and publish election results</p>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Results Management</h1>
+            <p className="text-muted-foreground mt-1">View and publish election results</p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="election-select" className="text-xs text-muted-foreground ml-1">Select Election</Label>
+            <select 
+              id="election-select"
+              className="bg-background border border-input px-3 py-2 rounded-md text-sm focus:ring-accent-teal outline-none"
+              value={selectedElectionId}
+              onChange={(e) => setSelectedElectionId(e.target.value)}
+            >
+              {electionHistory.map(e => (
+                <option key={e._id} value={e._id}>
+                  {e.title} {e.status === 'active' ? '(ACTIVE)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

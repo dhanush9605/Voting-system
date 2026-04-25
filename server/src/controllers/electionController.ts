@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Election from '../models/Election';
 import Candidate from '../models/Candidate';
 import User, { UserRole } from '../models/User';
@@ -12,13 +13,24 @@ import { sendEmail } from '../utils/email';
 // @access  Public
 export const getPublicElectionResults = async (req: Request, res: Response) => {
     try {
-        const election = await Election.findOne();
-
-        if (!election || !election.resultsPublished) {
-            return res.status(403).json({ message: 'Results not published yet' });
+        const { electionId } = req.query;
+        let election;
+        
+        if (electionId) {
+            election = await Election.findById(electionId);
+        } else {
+            election = await Election.findOne({ status: 'active' });
+            if (!election) {
+                // If no active, get the latest completed one
+                election = await Election.findOne({ status: 'completed' }).sort({ endDate: -1 });
+            }
         }
 
-        const candidates = await Candidate.find();
+        if (!election || !election.resultsPublished) {
+            return res.status(403).json({ message: 'Results not published yet or election not found' });
+        }
+
+        const candidates = await Candidate.find({ electionId: election._id });
 
         // Calculate total votes
         const totalVotes = candidates.reduce((acc, curr) => acc + (curr.voteCount || 0), 0) + (election.abstainCount || 0);
@@ -85,11 +97,17 @@ export const getPublicElectionResults = async (req: Request, res: Response) => {
 // @access  Public
 export const getElectionConfig = async (req: Request, res: Response) => {
     try {
-        // Find the single election document, or create if it doesn't exist
-        let election = await Election.findOne();
+        // Find the active election
+        let election = await Election.findOne({ status: 'active' });
 
         if (!election) {
-            return res.status(404).json({ message: 'Election not configured' });
+            // Check if there are ANY elections
+            const anyElection = await Election.findOne();
+            if (!anyElection) {
+                return res.status(404).json({ message: 'No elections configured. Please start your first election.' });
+            }
+            // If no active but some exist, return the latest completed one (read-only state basically)
+            election = await Election.findOne().sort({ createdAt: -1 });
         }
 
         res.json(election);
@@ -110,7 +128,7 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'End date must be after start date' });
         }
 
-        let election = await Election.findOne();
+        let election = await Election.findOne({ status: 'active' });
 
         if (election) {
             // Snapshot BEFORE modifying, to detect first-time creation
@@ -150,7 +168,7 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
 
             const startFormatted = new Date(election.startDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
             const endFormatted = new Date(election.endDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
-            const frontendUrl = process.env.FRONTEND_URL || 'https://voting2026.vercel.app';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://vora-network.vercel.app';
 
             Promise.allSettled(
                 voters.map(voter =>
@@ -211,8 +229,14 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
 // @access  Private/Admin
 export const togglePublishResults = async (req: Request, res: Response) => {
     try {
-        const { publish } = req.body; // true or false
-        let election = await Election.findOne();
+        const { publish, electionId } = req.body; // true or false
+        let election;
+        
+        if (electionId) {
+            election = await Election.findById(electionId);
+        } else {
+            election = await Election.findOne({ status: 'active' });
+        }
 
         if (!election) {
             return res.status(404).json({ message: 'Election not found' });
@@ -222,6 +246,10 @@ export const togglePublishResults = async (req: Request, res: Response) => {
         election.resultsPublished = publish;
         if (publish) {
             election.publishedAt = new Date();
+            // Also mark as completed if it was active
+            if (election.status === 'active') {
+                election.status = 'completed';
+            }
         } else {
             election.publishedAt = undefined;
         }
@@ -236,14 +264,14 @@ export const togglePublishResults = async (req: Request, res: Response) => {
                 user: voter._id,
                 type: 'success',
                 title: 'Results Published',
-                message: 'Election results have been published! Check the dashboard.'
+                message: `Results for ${election!.title} have been published!`
             }));
             if (notifications.length > 0) {
                 await Notification.insertMany(notifications);
             }
 
             // Load winner info for email
-            const candidates = await Candidate.find().sort({ voteCount: -1 });
+            const candidates = await Candidate.find({ electionId: election._id }).sort({ voteCount: -1 });
             const totalVotes = candidates.reduce((acc, c) => acc + (c.voteCount || 0), 0) + (election.abstainCount || 0);
             const topCandidate = candidates[0];
             const isTie = candidates.length > 1 && topCandidate?.voteCount === candidates[1]?.voteCount;
@@ -253,7 +281,7 @@ export const togglePublishResults = async (req: Request, res: Response) => {
                     ? '🤝 It\'s a tie! Check the results page for full details.'
                     : `🏆 <strong>${topCandidate.name}</strong> (${topCandidate.party}) leads with <strong>${topCandidate.voteCount}</strong> votes.`;
 
-            const frontendUrl = process.env.FRONTEND_URL || 'https://voting2026.vercel.app';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://vora-network.vercel.app';
 
             // Send Bulk Email to All Voters (Fire & Forget)
             Promise.allSettled(
@@ -325,9 +353,9 @@ export const emergencyStopElection = async (req: AuthRequest, res: Response) => 
             return res.status(401).json({ message: 'Invalid password. Action denied.' });
         }
 
-        let election = await Election.findOne();
+        let election = await Election.findOne({ status: 'active' });
         if (!election) {
-            return res.status(404).json({ message: 'Election not found' });
+            return res.status(404).json({ message: 'No active election found to stop.' });
         }
 
         // Stop the election by setting endDate to NOW
@@ -345,7 +373,97 @@ export const emergencyStopElection = async (req: AuthRequest, res: Response) => 
     }
 };
 
-// @desc    Reset election data
+// @desc    Get all elections
+// @route   GET /api/admin/elections
+// @access  Private/Admin
+export const getElectionHistory = async (req: Request, res: Response) => {
+    try {
+        const elections = await Election.find().sort({ createdAt: -1 });
+        res.json(elections);
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Start a brand new election (Archiving the current one)
+// @route   POST /api/admin/election/new
+// @access  Private/Admin
+export const startNewElection = async (req: AuthRequest, res: Response) => {
+    try {
+        const { title, description, startDate, endDate, password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({ message: 'Password is required to start a new election session' });
+        }
+
+        // Verify Admin Password
+        const user = await User.findById(req.user?._id);
+        if (!user) {
+            return res.status(404).json({ message: 'Admin user not found. Please log in again.' });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password as string);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid admin password.' });
+        }
+
+        // Attempt to used transaction if possible, but fallback for non-replica set environments
+        let session;
+        try {
+            session = await mongoose.startSession();
+            session.startTransaction();
+        } catch (sessionError) {
+            console.warn('⚠️ Transactions not supported or session failed. Proceeding without transaction.');
+            session = null;
+        }
+
+        try {
+            // 1. Archive current active election
+            await Election.updateMany(
+                { status: 'active' }, 
+                { status: 'completed' }, 
+                session ? { session } : {}
+            );
+
+            // 2. Create new election
+            const newElectionDocs = await Election.create([{
+                title,
+                description,
+                startDate,
+                endDate,
+                status: 'active'
+            }], session ? { session } : {});
+
+            const newElection = newElectionDocs[0];
+
+            if (session) {
+                await session.commitTransaction();
+                session.endSession();
+            }
+
+            res.json({ 
+                message: 'New election session started successfully.', 
+                election: newElection 
+            });
+
+        } catch (error: any) {
+            if (session) {
+                await session.abortTransaction();
+                session.endSession();
+            }
+            throw error;
+        }
+
+    } catch (error: any) {
+        console.error('Error starting new election:', error);
+        res.status(500).json({ 
+            message: error.message || 'Server Error',
+            details: error.name === 'ValidationError' ? error.errors : undefined
+        });
+    }
+};
+
+// @desc    Reset election data (for the ACTIVE election only)
 // @route   POST /api/admin/election/reset
 // @access  Private/Admin
 export const resetElection = async (req: AuthRequest, res: Response) => {
@@ -359,44 +477,136 @@ export const resetElection = async (req: AuthRequest, res: Response) => {
         // Verify Admin Password
         const user = await User.findById(req.user?._id);
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'Admin user not found. Please log in again.' });
         }
 
         const isMatch = await bcrypt.compare(password, user.password as string);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid password. Action denied.' });
+            return res.status(401).json({ message: 'Invalid admin password.' });
         }
 
-        const session = await User.startSession();
-        session.startTransaction();
+        const activeElection = await Election.findOne({ status: 'active' });
+        if (!activeElection) {
+            return res.status(404).json({ message: 'No active election to reset.' });
+        }
+
+        // Attempt transaction with fallback
+        let session;
+        try {
+            session = await mongoose.startSession();
+            session.startTransaction();
+        } catch (sessionError) {
+            console.warn('⚠️ Transactions not supported. Proceeding without transaction.');
+            session = null;
+        }
 
         try {
-            // 1. Reset Candidates
-            await Candidate.updateMany({}, { voteCount: 0 }, { session });
+            // 1. Reset Candidates for this election
+            await Candidate.updateMany(
+                { electionId: activeElection._id }, 
+                { voteCount: 0 }, 
+                session ? { session } : {}
+            );
 
-            // 2. Reset Users (hasVoted = false)
-            await User.updateMany({ role: UserRole.VOTER }, { hasVoted: false }, { session });
+            // 2. Reset Users who voted in THIS election
+            await User.updateMany(
+                { votedElections: activeElection._id },
+                { 
+                    $pull: { 
+                        votedElections: activeElection._id,
+                        votingRecords: { electionId: activeElection._id }
+                    }
+                },
+                session ? { session } : {}
+            );
 
             // 3. Reset Election Stats
-            await Election.updateMany({}, {
-                abstainCount: 0,
-                resultsPublished: false,
-                publishedAt: undefined
-            }, { session });
+            activeElection.abstainCount = 0;
+            activeElection.resultsPublished = false;
+            activeElection.publishedAt = undefined;
+            await activeElection.save(session ? { session } : {});
 
-            await session.commitTransaction();
-            session.endSession();
+            if (session) {
+                await session.commitTransaction();
+                session.endSession();
+            }
 
-            res.json({ message: 'Election data has been reset successfully.' });
+            res.json({ message: 'Active election data has been reset successfully.' });
 
-        } catch (error) {
-            await session.abortTransaction();
-            session.endSession();
+        } catch (error: any) {
+            if (session) {
+                await session.abortTransaction();
+                session.endSession();
+            }
             throw error;
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error resetting election:', error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ 
+            message: error.message || 'Server Error',
+            details: error.name === 'ValidationError' ? error.errors : undefined
+        });
+    }
+};
+
+// @desc    Delete an election (and associated data)
+// @route   DELETE /api/admin/election/:id
+// @access  Private/Admin
+export const deleteElection = async (req: AuthRequest, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // 1. Check if the election exists
+        const election = await Election.findById(id);
+        if (!election) {
+            return res.status(404).json({ message: 'Election not found' });
+        }
+
+        let session;
+        try {
+            session = await mongoose.startSession();
+            session.startTransaction();
+        } catch (sError) {
+            session = null;
+        }
+
+        try {
+            // A. Delete Candidates
+            await Candidate.deleteMany({ electionId: id }, session ? { session } : {});
+
+            // B. Clean up User History
+            await User.updateMany(
+                { votedElections: id },
+                { 
+                    $pull: { 
+                        votedElections: id,
+                        votingRecords: { electionId: id }
+                    }
+                },
+                session ? { session } : {}
+            );
+
+            // C. Delete Election
+            await Election.findByIdAndDelete(id, session ? { session } : {});
+
+            if (session) {
+                await session.commitTransaction();
+                session.endSession();
+            }
+
+            res.json({ message: 'Election and all associated data deleted successfully.' });
+
+        } catch (error: any) {
+            if (session) {
+                await session.abortTransaction();
+                session.endSession();
+            }
+            throw error;
+        }
+
+    } catch (error: any) {
+        console.error('Error deleting election:', error);
+        res.status(500).json({ message: error.message || 'Server Error' });
     }
 };

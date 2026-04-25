@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Search, Trash2, Edit, Save, X, Upload, Download } from "lucide-react";
+import { Plus, Search, Trash2, Edit, Save, X, Upload, Download, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -173,38 +173,67 @@ const CandidateManagement = () => {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {candidates.map(candidate => (
-          <Card key={candidate._id || candidate.id} className="overflow-hidden">
-            <div className="aspect-video bg-muted relative">
-              {candidate.imageUrl ? (
-                <img src={candidate.imageUrl} alt={candidate.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  No Image
-                </div>
-              )}
+      {!loading && candidates.length === 0 ? (
+        <div className="min-h-[400px] flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-border rounded-3xl bg-muted/10 relative overflow-hidden">
+          {/* Watermark Icon */}
+          <Users className="absolute -bottom-10 -right-10 w-64 h-64 text-foreground/[0.03] -rotate-12 pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col items-center">
+            <div className="w-20 h-20 rounded-full bg-secondary flex items-center justify-center mb-6">
+              <Plus className="w-10 h-10 text-muted-foreground" />
             </div>
-            <CardHeader>
-              <CardTitle>{candidate.name}</CardTitle>
-              <CardDescription>{candidate.party}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                {candidate.manifesto}
-              </p>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => handleOpenDialog(candidate)}>
-                  <Edit className="w-4 h-4 mr-1" /> Edit
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDelete(candidate._id || candidate.id)}>
-                  <Trash2 className="w-4 h-4 mr-1" /> Delete
-                </Button>
+            <h2 className="text-xl font-bold text-foreground">No Candidates Registered</h2>
+            <p className="text-muted-foreground max-w-xs mt-2 mb-8">
+              Start building your election by adding the first candidate to the platform.
+            </p>
+            <Button onClick={() => handleOpenDialog()} variant="hero" size="lg" className="rounded-full px-8 shadow-xl">
+              <Plus className="w-5 h-5 mr-2" />
+              Register First Candidate
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {candidates.map(candidate => (
+            <Card key={candidate._id || candidate.id} className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <div className="aspect-video bg-muted relative">
+                {candidate.imageUrl ? (
+                  <img src={candidate.imageUrl} alt={candidate.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    No Image
+                  </div>
+                )}
+                <div className="absolute top-2 right-2">
+                  <span className="px-2 py-1 bg-background/80 backdrop-blur-sm rounded text-[10px] font-bold uppercase tracking-wider">
+                    Candidate
+                  </span>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              <CardHeader>
+                <CardTitle>{candidate.name}</CardTitle>
+                <CardDescription className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  {candidate.party}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground line-clamp-3 mb-6">
+                  {candidate.manifesto}
+                </p>
+                <div className="flex gap-2 justify-end pt-4 border-t border-border">
+                  <Button variant="ghost" size="sm" onClick={() => handleOpenDialog(candidate)} className="h-9">
+                    <Edit className="w-4 h-4 mr-1.5" /> Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(candidate._id || candidate.id)} className="h-9 text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">

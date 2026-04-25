@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllVoters, verifyVoter, deleteVoter, getDashboardStats, getElectionResults } from '../controllers/adminController';
+import { getAllVoters, verifyVoter, deleteVoter, getDashboardStats, getElectionResults, getSettings, updateSettings } from '../controllers/adminController';
 import { protect, admin } from '../middleware/authMiddleware';
 
 const router = express.Router();
@@ -11,11 +11,28 @@ router.get('/dashboard', protect, admin, getDashboardStats);
 router.get('/results', protect, admin, getElectionResults);
 
 // Election Info Management
-import { getElectionConfig, updateElectionConfig, togglePublishResults, emergencyStopElection, resetElection } from '../controllers/electionController';
+import { 
+  getElectionConfig, 
+  updateElectionConfig, 
+  togglePublishResults, 
+  emergencyStopElection, 
+  resetElection,
+  startNewElection,
+  getElectionHistory,
+  deleteElection
+} from '../controllers/electionController';
+
 router.get('/election', protect, admin, getElectionConfig);
 router.put('/election', protect, admin, updateElectionConfig);
 router.put('/election/publish', protect, admin, togglePublishResults);
 router.post('/election/stop', protect, admin, emergencyStopElection);
 router.post('/election/reset', protect, admin, resetElection);
+router.post('/election/new', protect, admin, startNewElection);
+router.get('/elections', protect, admin, getElectionHistory);
+router.delete('/election/:id', protect, admin, deleteElection);
+
+// Admin Settings
+router.get('/settings', protect, admin, getSettings);
+router.put('/settings', protect, admin, updateSettings);
 
 export default router;

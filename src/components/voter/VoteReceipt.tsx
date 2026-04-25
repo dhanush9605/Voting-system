@@ -189,9 +189,9 @@ const VoteReceipt: React.FC<VoteReceiptProps> = ({
                                             <Button
                                                 variant="link"
                                                 className="h-auto p-0 text-xs text-primary font-bold hover:underline print-hidden uppercase tracking-tighter"
-                                                onClick={() => window.open(`/verify-vote?hash=${transactionHash}`, '_blank')}
+                                                onClick={() => window.open(`https://sepolia.etherscan.io/tx/${transactionHash}`, '_blank')}
                                             >
-                                                Verify on Explorer <ExternalLink className="w-3 h-3 ml-1" />
+                                                Verify on Etherscan <ExternalLink className="w-3 h-3 ml-1" />
                                             </Button>
                                         </div>
                                     </div>
