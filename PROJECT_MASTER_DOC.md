@@ -60,20 +60,20 @@ PORT=5000
 NODE_ENV=development
 
 # Database (MongoDB Atlas)
-MONGO_URI=mongodb+srv://dango66:123412dango@cluster.4wmcr8d.mongodb.net/voting-system?appName=Cluster
+MONGO_URI=your_mongodb_atlas_uri
 
 # Security
-JWT_SECRET=52e68f0a5f1e26443f9e7fedd21ccb23f269634a709b47b932480cf35e294ef0
+JWT_SECRET=your_jwt_secret_key
 
-# --- BLOCKCHAIN INTEGRATION (New) ---
-# Network Provider (Alchemy)
-SEPOLIA_RPC_URL='https://eth-sepolia.g.alchemy.com/v2/xVJGlFAqBzJ-WWivky0ee'
+# --- BLOCKCHAIN INTEGRATION ---
+# Network Provider (Alchemy/Infura)
+SEPOLIA_RPC_URL=your_sepolia_rpc_url
 
 # Master Wallet (Pays for Gas) - KEEP SECRET
-PRIVATE_KEY='253384de2747313007839e7870faa306cb4e3ef0816831a13809fc1064a2da52'
+PRIVATE_KEY=your_wallet_private_key
 
 # Deployed Smart Contract Address
-CONTRACT_ADDRESS='0x1b7665b484568F96406B2d54871735839E2b5A7f'
+CONTRACT_ADDRESS=your_contract_address
 ```
 
 **B. Frontend (.env.local or .env)**

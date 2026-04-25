@@ -6,6 +6,7 @@ export interface ICandidate extends Document {
     manifesto: string;
     imageUrl?: string;
     voteCount: number;
+    electionId: mongoose.Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -15,7 +16,8 @@ const CandidateSchema: Schema = new Schema({
     party: { type: String, required: true },
     manifesto: { type: String, required: true },
     imageUrl: { type: String },
-    voteCount: { type: Number, default: 0 }
+    voteCount: { type: Number, default: 0 },
+    electionId: { type: Schema.Types.ObjectId, ref: 'Election', required: true }
 }, {
     timestamps: true
 });

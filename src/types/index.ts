@@ -114,5 +114,7 @@ export interface ElectionConfig {
   description: string;
   startDate: string;
   endDate: string;
+  status?: 'active' | 'upcoming' | 'completed';
+  resultsPublished?: boolean;
   updatedAt?: string;
 }

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Candidate from '../models/Candidate';
+import Election from '../models/Election';
 import { contract } from '../config/blockchain';
 
 // @desc    Create a new candidate
@@ -7,13 +8,23 @@ import { contract } from '../config/blockchain';
 // @access  Private/Admin
 export const createCandidate = async (req: Request, res: Response) => {
     try {
-        const { name, party, manifesto, imageUrl } = req.body;
+        const { name, party, manifesto, imageUrl, electionId } = req.body;
+
+        let targetElectionId = electionId;
+        if (!targetElectionId) {
+            const activeElection = await Election.findOne({ status: 'active' });
+            if (!activeElection) {
+                return res.status(400).json({ message: 'No active election to add candidates to.' });
+            }
+            targetElectionId = activeElection._id;
+        }
 
         const candidate = await Candidate.create({
             name,
             party,
             manifesto,
-            imageUrl
+            imageUrl,
+            electionId: targetElectionId
         });
 
         res.status(201).json(candidate);
@@ -41,7 +52,19 @@ export const createCandidate = async (req: Request, res: Response) => {
 // @access  Public (or Protected)
 export const getAllCandidates = async (req: Request, res: Response) => {
     try {
-        const candidates = await Candidate.find({}).sort({ name: 1 });
+        const { electionId } = req.query;
+        let query: any = {};
+        
+        if (electionId) {
+            query.electionId = electionId;
+        } else {
+            const activeElection = await Election.findOne({ status: 'active' });
+            if (activeElection) {
+                query.electionId = activeElection._id;
+            }
+        }
+
+        const candidates = await Candidate.find(query).sort({ name: 1 });
         res.json(candidates);
     } catch (error: any) {
         res.status(500).json({ message: error.message });

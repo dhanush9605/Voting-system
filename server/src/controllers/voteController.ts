@@ -34,6 +34,15 @@ export const castVote = async (req: AuthRequest, res: Response) => {
             return;
         }
 
+        // Fetch ACTIVE election
+        const activeElection = await Election.findOne({ status: 'active' }).session(session);
+        if (!activeElection) {
+            await session.abortTransaction();
+            session.endSession();
+            res.status(404).json({ message: 'No active election found' });
+            return;
+        }
+
         if (user.verificationStatus !== VerificationStatus.VERIFIED) {
             await session.abortTransaction();
             session.endSession();
@@ -41,16 +50,19 @@ export const castVote = async (req: AuthRequest, res: Response) => {
             return;
         }
 
-        if (user.hasVoted) {
+        // Check if user already voted in THIS specific election
+        const alreadyVoted = user.votedElections.includes(activeElection._id as any);
+        if (alreadyVoted) {
             await session.abortTransaction();
             session.endSession();
-            res.status(400).json({ message: 'You have already voted' });
+            res.status(400).json({ message: 'You have already voted in this election' });
             return;
         }
 
         // 2. Fetch Candidate or Check Abstain
         if (candidateId === 'abstain') {
-            await Election.findOneAndUpdate({}, { $inc: { abstainCount: 1 } }, { session });
+            activeElection.abstainCount = (activeElection.abstainCount || 0) + 1;
+            await activeElection.save({ session });
         } else {
             const candidate = await Candidate.findById(candidateId).session(session);
             if (!candidate) {
@@ -68,6 +80,12 @@ export const castVote = async (req: AuthRequest, res: Response) => {
         // Mark user as having voted
         user.hasVoted = true;
         user.votedAt = new Date();
+        user.votedElections.push(activeElection._id as any);
+        user.votingRecords.push({
+            electionId: activeElection._id as any,
+            transactionHash: undefined, // Will fill after blockchain tx if applicable
+            votedAt: new Date()
+        });
         await user.save({ session });
 
         // Commit transaction
@@ -125,6 +143,9 @@ export const castVote = async (req: AuthRequest, res: Response) => {
         // Persist the transaction hash to the user record
         if (transactionHash) {
             user.voteTransactionHash = transactionHash;
+            // Update the specific record in votingRecords too
+            const record = user.votingRecords.find(r => r.electionId.toString() === activeElection._id.toString());
+            if (record) record.transactionHash = transactionHash;
             await user.save();
         }
 

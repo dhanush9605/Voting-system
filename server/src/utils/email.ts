@@ -48,26 +48,35 @@ interface EmailOptions {
     html?: string;
 }
 
+import Settings from '../models/Settings';
+
 export const sendEmail = async ({ to, subject, text, html }: EmailOptions) => {
     if (!transporter) {
         console.warn('⚠️ Cannot send email: Transporter not initialized. Check .env');
         throw new Error("Email service is not configured.");
     }
 
-    const mailOptions = {
-        from: `"Voting System" <${process.env.SENDER_EMAIL || process.env.EMAIL_USER}>`,
-        to,
-        subject,
-        text,
-        html
-    };
-
     try {
+        // Check global settings
+        const settings = await Settings.findOne();
+        if (settings && settings.emailNotificationsEnabled === false) {
+            console.log(`🔇 Email notifications are disabled globally. Skipping email to ${to}`);
+            return null; // Gracefully act like it succeeded without actually sending
+        }
+
+        const mailOptions = {
+            from: `"Voting System" <${process.env.SENDER_EMAIL || process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            text,
+            html
+        };
+
         const info = await transporter.sendMail(mailOptions);
         // console.log(`📧 Email sent to ${to}: ${info.messageId}`);
         return info;
     } catch (error: any) {
         console.error("❌ Send Mail Failed:", error);
-        throw error; // Rethrow to be handled by controller
+        throw error; // Rethrow to be handled by controller if necessary
     }
 };

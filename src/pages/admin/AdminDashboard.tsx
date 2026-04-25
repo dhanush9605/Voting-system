@@ -20,6 +20,20 @@ const AdminDashboard = () => {
     refetchInterval: 10000, // Poll every 10 seconds
   });
 
+  const [activeElection, setActiveElection] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchActiveElection = async () => {
+      try {
+        const { data } = await api.get('/admin/election');
+        setActiveElection(data);
+      } catch (err) {
+        console.error("Failed to fetch active election");
+      }
+    };
+    fetchActiveElection();
+  }, []);
+
   const stats = dashboardData?.stats || {
     totalRegistered: 0,
     verifiedVoters: 0,
@@ -43,7 +57,7 @@ const AdminDashboard = () => {
             Welcome back, {user?.name?.split(' ')[0]}!
           </h1>
           <p className="text-muted-foreground mt-1">
-            Here's what's happening with the election today.
+            Current Session: <span className="text-foreground font-semibold uppercase tracking-wider">{activeElection?.title || 'Loading...'}</span>
           </p>
         </div>
         <div className="flex items-center gap-3">
