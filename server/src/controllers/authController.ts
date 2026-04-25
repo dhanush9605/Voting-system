@@ -199,7 +199,7 @@ export const registerUser = async (req: Request, res: Response) => {
                             <li><strong>Email:</strong> ${user.email}</li>
                             <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
                         </ul>
-                        <p>Please log in to the <a href="${process.env.FRONTEND_URL || 'https://vora.vercel.app'}/admin/login">Admin Dashboard</a> to verify this user.</p>
+                        <p>Please log in to the <a href="${process.env.FRONTEND_URL || 'https://vora-network.vercel.app'}/admin/login">Admin Dashboard</a> to verify this user.</p>
                     </div>
                 `
             }).catch(err => console.error("Admin Alert Email Failed:", err));

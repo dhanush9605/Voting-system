@@ -168,7 +168,7 @@ export const updateElectionConfig = async (req: Request, res: Response) => {
 
             const startFormatted = new Date(election.startDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
             const endFormatted = new Date(election.endDate).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
-            const frontendUrl = process.env.FRONTEND_URL || 'https://vora.vercel.app';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://vora-network.vercel.app';
 
             Promise.allSettled(
                 voters.map(voter =>
@@ -281,7 +281,7 @@ export const togglePublishResults = async (req: Request, res: Response) => {
                     ? '🤝 It\'s a tie! Check the results page for full details.'
                     : `🏆 <strong>${topCandidate.name}</strong> (${topCandidate.party}) leads with <strong>${topCandidate.voteCount}</strong> votes.`;
 
-            const frontendUrl = process.env.FRONTEND_URL || 'https://vora.vercel.app';
+            const frontendUrl = process.env.FRONTEND_URL || 'https://vora-network.vercel.app';
 
             // Send Bulk Email to All Voters (Fire & Forget)
             Promise.allSettled(
