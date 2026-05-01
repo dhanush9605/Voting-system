@@ -7,7 +7,7 @@ if (privateKey) {
     try {
         const wallet = new ethers.Wallet(privateKey);
         console.log("Wallet Address from .env:", wallet.address);
-    } catch (e) {
+    } catch (e: any) {
         console.error("Error with private key:", e.message);
     }
 } else {

@@ -74,7 +74,7 @@ const VoterDashboard = () => {
                 {isEligibleToVote ? 'You are fully verified and eligible to cast your vote.' :
                   !isFaceVerified ? 'Please complete your face verification to proceed.' :
                     isPending ? 'Your face is verified. Now waiting for an administrator to approve your profile.' :
-                      'Your registration was rejected. Please contact support.'}
+                      `Your registration was rejected. ${user?.rejectionReason ? `Reason: ${user.rejectionReason}` : 'Please check your profile details.'}`}
               </p>
               {isEligibleToVote && !hasVoted && (
                 <Link to="/vote" className="inline-block mt-4">

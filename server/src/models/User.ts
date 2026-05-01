@@ -26,6 +26,7 @@ export interface IUser extends Document {
     imageHash?: string;
     imageUrl?: string;
     idCardUrl?: string;
+    rejectionReason?: string;
     voteTransactionHash?: string;
     votedAt?: Date;
     votedElections: mongoose.Types.ObjectId[];
@@ -67,6 +68,7 @@ const UserSchema: Schema = new Schema({
     imageHash: { type: String },
     imageUrl: { type: String },
     idCardUrl: { type: String },
+    rejectionReason: { type: String },
     voteTransactionHash: { type: String },
     votedAt: { type: Date },
     refreshToken: { type: String }

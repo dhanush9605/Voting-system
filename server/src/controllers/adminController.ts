@@ -48,6 +48,11 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
         }
 
         user.verificationStatus = status;
+        if (status === VerificationStatus.REJECTED) {
+            user.rejectionReason = rejectionReason;
+        } else {
+            user.rejectionReason = undefined;
+        }
         await user.save();
 
         // Create Notification
@@ -91,7 +96,8 @@ export const verifyVoter = async (req: AuthRequest, res: Response) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
-                verificationStatus: user.verificationStatus
+                verificationStatus: user.verificationStatus,
+                rejectionReason: user.rejectionReason
             }
         });
 

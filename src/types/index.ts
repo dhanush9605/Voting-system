@@ -14,6 +14,7 @@ export interface User {
   imageHash?: string;
   hasVoted?: boolean;
   verificationStatus?: 'pending' | 'verified' | 'rejected';
+  rejectionReason?: string;
   isFaceVerified?: boolean;
   voteTransactionHash?: string;
   votedAt?: string;
@@ -93,6 +94,7 @@ export interface VoterRecord {
   idCardUrl?: string; // Add this field
   imageHash?: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
+  rejectionReason?: string;
   hasVoted: boolean;
   registeredAt: string;
   verifiedAt?: string;

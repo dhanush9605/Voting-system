@@ -69,6 +69,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
         email: user.email,
         role: user.role,
         verificationStatus: user.verificationStatus,
+        rejectionReason: user.rejectionReason,
         isFaceVerified: user.isFaceVerified,
         hasVoted: user.hasVoted,
         imageUrl: user.imageUrl,
@@ -416,6 +417,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             email: user.email,
             role: user.role,
             verificationStatus: user.verificationStatus,
+            rejectionReason: user.rejectionReason,
             isFaceVerified: user.isFaceVerified,
             hasVoted: user.hasVoted,
             imageUrl: user.imageUrl,
@@ -449,22 +451,42 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
 
 
 
-// @desc    Update user face data (for google login completion)
+// @desc    Update user profile data and documents
 // @route   PUT /api/auth/update-face
 // @access  Private
 export const updateFaceData = async (req: AuthRequest, res: Response) => {
     try {
-        const { imageHash, imageUrl } = req.body;
+        const { imageHash, imageUrl, idCardUrl, name, studentId } = req.body;
         const user = await User.findById(req.user?._id);
 
         if (user) {
-            user.imageHash = imageHash;
-            // user.isFaceVerified = true; // Optional: mark verified immediately? Or keep waiting for vote time? 
-            // The prompt "Complete Profile" implies this IS the registration of face.
+            // Check for student ID collision
+            if (studentId && studentId !== user.studentId) {
+                const existingUser = await User.findOne({ studentId });
+                if (existingUser) {
+                    return res.status(400).json({ message: 'Student ID is already registered.' });
+                }
+                user.studentId = studentId;
+            }
+
+            if (name) user.name = name;
+            if (imageHash) user.imageHash = imageHash;
             if (imageUrl) user.imageUrl = imageUrl;
+            if (idCardUrl) user.idCardUrl = idCardUrl;
+
+            // If the user was rejected and they are updating their profile, reset status to pending
+            if (user.verificationStatus === VerificationStatus.REJECTED) {
+                user.verificationStatus = VerificationStatus.PENDING;
+                user.rejectionReason = undefined;
+            }
 
             await user.save();
-            res.json({ message: 'Face data updated successfully' });
+            res.json({ 
+                message: 'Profile updated successfully', 
+                verificationStatus: user.verificationStatus,
+                name: user.name,
+                studentId: user.studentId
+            });
         } else {
             res.status(404).json({ message: 'User not found' });
         }

@@ -42,8 +42,3 @@ export const uploadFile = async (req: Request, res: Response) => {
         });
     }
 };
-
-// @desc    Get signed URL (Legacy/Unused for now)
-export const getSignedUrl = async (req: Request, res: Response) => {
-    res.status(501).json({ message: 'Not implemented. Use direct upload endpoint.' });
-};

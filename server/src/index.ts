@@ -27,8 +27,9 @@ app.use(async (req, res, next) => {
     }
 });
 
-app.use(cors({
-    origin: [
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : [
         'http://localhost:5173',
         'http://localhost:4173',
         'http://localhost:8080',
@@ -39,7 +40,16 @@ app.use(cors({
         'http://localhost',
         'capacitor://localhost',
         'http://10.0.2.2'
-    ],
+    ];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 
