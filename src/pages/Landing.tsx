@@ -669,42 +669,7 @@ const Landing = () => {
                 </div>
 
                 {/* Idea 1: The Digital Signature (Signature Stamp) */}
-                <div className="flex flex-col items-center">
-                  <div className="relative group">
-                    {/* Holographic Mesh Glow Background */}
-                    <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-violet-500/20 to-purple-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                    
-                    <a 
-                      href="https://dhanush-rajesh.vercel.app/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="relative block"
-                    >
-                      <div className="flex flex-col items-center gap-3">
-                        <span className="text-[8px] font-black text-muted-foreground/60 uppercase tracking-[0.5em] group-hover:text-primary transition-colors duration-500">Signature of Quality</span>
-                        
-                        {/* The Stamp */}
-                        <div className="relative px-6 py-3 rounded-2xl bg-background/40 backdrop-blur-md border border-border/50 shadow-sm group-hover:shadow-[0_0_40px_rgba(37,99,235,0.2)] group-hover:border-primary/30 transition-all duration-500">
-                          <div className="flex items-center gap-3">
-                            <div className="relative">
-                              {/* Pulse Effect */}
-                              <div className="absolute -inset-1 bg-primary/20 rounded-lg blur-sm animate-pulse opacity-0 group-hover:opacity-100 transition-opacity" />
-                              
-                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-foreground to-foreground/80 flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform duration-500">
-                                <span className="text-xs font-black text-background">DR</span>
-                              </div>
-                            </div>
-                            
-                            <div className="flex flex-col">
-                              <span className="text-[10px] font-black text-foreground tracking-tighter">AUTHENTICATED BY</span>
-                              <span className="text-[9px] font-bold text-muted-foreground/80 tracking-widest">DHANUSH RAJESH</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-                </div>
+
 
                 <div className="flex flex-col items-center md:items-end gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-background border border-border/50 shadow-sm">
