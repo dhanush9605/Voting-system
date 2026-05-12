@@ -247,6 +247,47 @@ const VoterDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Voting History */}
+      {user?.votingRecords && user.votingRecords.length > 0 && (
+        <Card className="transition-all duration-300 hover:shadow-lg border-primary/10">
+          <CardHeader>
+            <CardTitle className="text-lg flex justify-between items-center">
+              <span>Your Voting History</span>
+              <span className="text-sm font-normal text-muted-foreground bg-muted px-3 py-1 rounded-full">
+                Attended: {user.votingRecords.length} Elections
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {user.votingRecords.map((record, index) => (
+                <div key={index} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 bg-muted/30 rounded-xl border border-border/50 hover:bg-muted/50 transition-colors">
+                  <div className="mb-3 md:mb-0">
+                    <h4 className="font-bold text-foreground">
+                      {record.electionId?.title || 'Unknown Election'}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      {new Date(record.votedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </div>
+                  </div>
+                  {record.transactionHash && (
+                    <div className="flex gap-2 w-full md:w-auto">
+                      <Link to={`/verify-vote?hash=${record.transactionHash}`} target="_blank" className="w-full md:w-auto">
+                        <Button variant="outline" size="sm" className="w-full text-xs hover:text-accent-teal hover:border-accent-teal">
+                          <FileText className="w-3 h-3 mr-2" />
+                          Blockchain Receipt
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

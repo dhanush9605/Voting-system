@@ -425,6 +425,16 @@ export const startNewElection = async (req: AuthRequest, res: Response) => {
                 session ? { session } : {}
             );
 
+            // 1b. Reset voting status for all users so they can vote in the new election
+            await User.updateMany(
+                {},
+                {
+                    $set: { hasVoted: false },
+                    $unset: { voteTransactionHash: "", votedAt: "" }
+                },
+                session ? { session } : {}
+            );
+
             // 2. Create new election
             const newElectionDocs = await Election.create([{
                 title,
@@ -515,7 +525,9 @@ export const resetElection = async (req: AuthRequest, res: Response) => {
                     $pull: { 
                         votedElections: activeElection._id,
                         votingRecords: { electionId: activeElection._id }
-                    }
+                    },
+                    $set: { hasVoted: false },
+                    $unset: { voteTransactionHash: "", votedAt: "" }
                 },
                 session ? { session } : {}
             );

@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User, { IUser, UserRole, VerificationStatus } from '../models/User';
 import Notification from '../models/Notification';
+import Election from '../models/Election';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { sendEmail } from '../utils/email';
 
@@ -408,7 +409,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
     if (!req.user) {
         return res.status(404).json({ message: 'User not found' });
     }
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).populate('votingRecords.electionId', 'title startDate endDate');
 
     if (user) {
         res.json({
@@ -422,7 +423,8 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             hasVoted: user.hasVoted,
             imageUrl: user.imageUrl,
             idCardUrl: user.idCardUrl,
-            voteTransactionHash: user.voteTransactionHash
+            voteTransactionHash: user.voteTransactionHash,
+            votingRecords: user.votingRecords
         });
     } else {
         res.status(404).json({ message: 'User not found' });

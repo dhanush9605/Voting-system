@@ -19,6 +19,11 @@ export interface User {
   voteTransactionHash?: string;
   votedAt?: string;
   createdAt: string;
+  votingRecords?: Array<{
+    electionId: { _id: string; title: string; startDate: string; endDate: string };
+    transactionHash?: string;
+    votedAt: string;
+  }>;
 }
 
 export interface AuthState {
