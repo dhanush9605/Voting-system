@@ -70,6 +70,21 @@ const VotePage = () => {
 
   // Check if user has already voted
   if (user?.hasVoted) {
+    // Find the record for the current active election if possible
+    const currentRecord = user.votingRecords?.find(r => 
+      r.electionId?._id === election?._id || r.electionId === election?._id
+    );
+    
+    // Fallback to the latest record if we can't match the current election
+    const latestRecord = user.votingRecords && user.votingRecords.length > 0 
+      ? user.votingRecords[user.votingRecords.length - 1] 
+      : null;
+      
+    const recordToUse = currentRecord || latestRecord;
+    
+    const displayTimestamp = user.votedAt || recordToUse?.votedAt || user.createdAt;
+    const displayTxHash = user.voteTransactionHash || recordToUse?.transactionHash;
+
     return (
       <div className="max-w-2xl mx-auto text-center py-12 animate-fade-in">
         <div className="w-20 h-20 rounded-full bg-accent-teal/10 flex items-center justify-center mx-auto mb-6">
@@ -83,8 +98,8 @@ const VotePage = () => {
         <div className="mb-10">
           <VoteReceipt
             voterName={user.name}
-            timestamp={user.votedAt || user.createdAt}
-            transactionHash={user.voteTransactionHash}
+            timestamp={displayTimestamp}
+            transactionHash={displayTxHash}
             voterImage={user.imageUrl}
             electionName={election?.title}
           />
@@ -167,7 +182,7 @@ const VotePage = () => {
       };
 
       setVoteReceipt(receipt);
-      updateUser({ hasVoted: true, votedAt: receipt.timestamp });
+      updateUser({ hasVoted: true, votedAt: receipt.timestamp, voteTransactionHash: data.transactionHash });
 
       toast({
         title: "Vote submitted successfully!",

@@ -75,7 +75,8 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
         hasVoted: user.hasVoted,
         imageUrl: user.imageUrl,
         idCardUrl: user.idCardUrl,
-        voteTransactionHash: user.voteTransactionHash
+        voteTransactionHash: user.voteTransactionHash,
+        votedAt: user.votedAt
     });
 };
 
@@ -424,6 +425,7 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
             imageUrl: user.imageUrl,
             idCardUrl: user.idCardUrl,
             voteTransactionHash: user.voteTransactionHash,
+            votedAt: user.votedAt,
             votingRecords: user.votingRecords
         });
     } else {
