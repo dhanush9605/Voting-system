@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Vote, CheckCircle, Clock, AlertCircle, ArrowRight, FileText, RefreshCw } from "lucide-react";
+import { Vote, CheckCircle, Clock, AlertCircle, ArrowRight, FileText, RefreshCw, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
@@ -25,6 +25,20 @@ const VoterDashboard = () => {
   const isEligibleToVote = isAdminVerified;
   const isPending = user?.verificationStatus === 'pending';
   const hasVoted = user?.hasVoted;
+
+  const [blockNumber, setBlockNumber] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user?.voteTransactionHash) {
+      api.get(`/vote/verify/${user.voteTransactionHash}`)
+        .then(res => {
+          if (res.data && res.data.blockNumber) {
+            setBlockNumber(res.data.blockNumber);
+          }
+        })
+        .catch(err => console.error("Failed to fetch block number:", err));
+    }
+  }, [user?.voteTransactionHash]);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -130,7 +144,15 @@ const VoterDashboard = () => {
 
                 {user?.voteTransactionHash && (
                   <div className="mt-6 pt-4 border-t border-accent-teal/20">
-                    <p className="text-sm font-medium text-foreground/80 mb-2">Blockchain Proof:</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-foreground/80">Blockchain Proof:</p>
+                      {blockNumber && (
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+                          <Layers className="w-3.5 h-3.5" />
+                          <span>Block: {blockNumber}</span>
+                        </div>
+                      )}
+                    </div>
                     <code className="block bg-background/50 p-3 rounded-lg border border-border text-xs font-mono break-all mb-3 text-muted-foreground hover:text-foreground transition-colors cursor-help" title="Transaction Hash">
                       {user.voteTransactionHash}
                     </code>

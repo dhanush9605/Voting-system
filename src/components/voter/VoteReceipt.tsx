@@ -1,6 +1,7 @@
-import React from "react";
-import { CheckCircle, ExternalLink, Shield, Download } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { CheckCircle, ExternalLink, Shield, Download, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SITE_NAME } from "@/lib/site-config";
 
@@ -19,6 +20,20 @@ const VoteReceipt: React.FC<VoteReceiptProps> = ({
     voterImage,
     electionName
 }) => {
+    const [blockNumber, setBlockNumber] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (transactionHash) {
+            api.get(`/vote/verify/${transactionHash}`)
+                .then(res => {
+                    if (res.data && res.data.blockNumber) {
+                        setBlockNumber(res.data.blockNumber);
+                    }
+                })
+                .catch(err => console.error("Failed to verify vote:", err));
+        }
+    }, [transactionHash]);
+
     const handleDownload = () => {
         const element = document.getElementById('printable-receipt-card');
         if (!element) return;
@@ -185,6 +200,12 @@ const VoteReceipt: React.FC<VoteReceiptProps> = ({
                                                 {transactionHash}
                                             </code>
                                         </div>
+                                        {blockNumber && (
+                                            <div className="flex items-center justify-center gap-2 mt-2 border-t border-border/30 pt-3">
+                                                <Layers className="w-3.5 h-3.5 text-primary" />
+                                                <span className="text-xs font-semibold text-foreground tracking-widest uppercase">Block: {blockNumber}</span>
+                                            </div>
+                                        )}
                                         <div className="flex items-center justify-center">
                                             <Button
                                                 variant="link"
