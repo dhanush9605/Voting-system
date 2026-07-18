@@ -80,12 +80,14 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
     });
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
 export const registerUser = async (req: Request, res: Response) => {
     try {
         const { name, email, password, role, studentId, imageHash, imageUrl, idCardUrl } = req.body;
+
+        if (role === UserRole.ADMIN || role === 'admin') {
+            res.status(400).json({ message: 'Registration of Administrator accounts is not permitted.' });
+            return;
+        }
 
         const userExists = await User.findOne({ $or: [{ email }, { studentId }] });
 
@@ -202,7 +204,7 @@ export const registerUser = async (req: Request, res: Response) => {
                             <li><strong>Email:</strong> ${user.email}</li>
                             <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
                         </ul>
-                        <p>Please log in to the <a href="${process.env.FRONTEND_URL || 'https://vora-network.vercel.app'}/admin/login">Admin Dashboard</a> to verify this user.</p>
+                        <p>Please log in to the <a href="${process.env.ADMIN_FRONTEND_URL || 'http://localhost:8081'}">Admin Dashboard</a> to verify this user.</p>
                     </div>
                 `
             }).catch(err => console.error("Admin Alert Email Failed:", err));

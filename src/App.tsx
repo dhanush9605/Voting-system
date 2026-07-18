@@ -11,25 +11,12 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 // Public pages
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
-import AdminLogin from "./pages/admin/AdminLogin";
 import Register from "./pages/Register";
 import PublicResults from "./pages/PublicResults";
 import NotFound from "./pages/NotFound";
 import CompleteProfile from "./pages/CompleteProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-
-// ...
-
-
-
-// Admin pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminSettings from "./pages/admin/AdminSettings";
-import CandidateManagement from "./pages/admin/CandidateManagement";
-import VoterManagement from "./pages/admin/VoterManagement";
-import ResultsManagement from "./pages/admin/ResultsManagement";
-import ElectionManagement from "./pages/admin/ElectionManagement";
 
 // Voter pages
 import VoterDashboard from "./pages/voter/VoterDashboard";
@@ -56,25 +43,9 @@ const App = () => (
             {/* Auth routes */}
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-            </Route>
-
-            {/* Admin routes */}
-            <Route element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AppLayout />
-              </ProtectedRoute>
-            }>
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/candidates" element={<CandidateManagement />} />
-              <Route path="/admin/voters" element={<VoterManagement />} />
-              <Route path="/admin/verify" element={<VoterManagement />} />
-              <Route path="/admin/results" element={<ResultsManagement />} />
-              <Route path="/admin/elections" element={<ElectionManagement />} />
-              <Route path="/admin/settings" element={<AdminSettings />} />
             </Route>
 
             {/* Voter routes */}

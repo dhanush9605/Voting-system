@@ -34,26 +34,6 @@ interface NavSection {
   items: NavItem[];
 }
 
-const adminNavSections: NavSection[] = [
-  {
-    label: "MAIN MENU",
-    items: [
-      { title: "Dashboard", url: "/admin/dashboard", icon: LayoutDashboard },
-      { title: "Candidates", url: "/admin/candidates", icon: Users },
-      { title: "Voters", url: "/admin/voters", icon: UserCheck },
-    ],
-  },
-  {
-    label: "MANAGEMENT",
-    items: [
-      { title: "Verification", url: "/admin/verify", icon: FileCheck },
-      { title: "Elections", url: "/admin/elections", icon: CalendarRange },
-      { title: "Results", url: "/admin/results", icon: BarChart3 },
-      { title: "Settings", url: "/admin/settings", icon: Settings },
-    ],
-  },
-];
-
 const voterNavSections: NavSection[] = [
   {
     label: "MAIN MENU",
@@ -78,7 +58,7 @@ export function AppSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const navSections = user?.role === 'admin' ? adminNavSections : voterNavSections;
+  const navSections = voterNavSections;
 
   const handleLogout = () => {
     logout();

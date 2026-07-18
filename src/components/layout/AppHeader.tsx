@@ -71,20 +71,11 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-48 bg-popover border border-border shadow-elevated z-50">
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => handleNavigate(user?.role === 'admin' ? '/admin/dashboard' : '/voter/profile')}
+              onClick={() => handleNavigate('/voter/profile')}
             >
               <User className="w-4 h-4 mr-2" />
               Profile
             </DropdownMenuItem>
-            {user?.role === 'admin' && (
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => handleNavigate('/admin/settings')}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Admin Settings
-              </DropdownMenuItem>
-            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer text-destructive focus:text-destructive"
