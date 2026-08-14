@@ -10,17 +10,9 @@
     "preview": "vite preview",
     "admin:install": "npm --prefix admin-panel install",
     "admin:dev": "npm --prefix admin-panel run dev -- --port 8081",
-    "admin:build": "npm --prefix admin-panel run build",
-    "admin:cap-init": "npx --prefix admin-panel cap init \"VORA Admin\" com.vora.admin.app --web-dir=dist",
-    "admin:cap-add": "npx --prefix admin-panel cap add android",
-    "admin:cap-copy": "npm --prefix admin-panel run build && npx --prefix admin-panel cap copy",
-    "admin:cap-sync": "npm --prefix admin-panel run build && npx --prefix admin-panel cap sync",
-    "admin:cap-open": "npx --prefix admin-panel cap open android"
+    "admin:build": "npm --prefix admin-panel run build"
   },
   "dependencies": {
-    "@capacitor/android": "^8.0.2",
-    "@capacitor/cli": "^8.0.2",
-    "@capacitor/core": "^8.0.2",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

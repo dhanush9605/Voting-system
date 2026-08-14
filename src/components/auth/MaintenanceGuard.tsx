@@ -46,6 +46,10 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
   const isLoginPage = location.pathname === '/login';
   const isAdminUser = user?.role === 'admin';
 
+  if (isLoading) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
   if (maintenanceMode) {
     if (isAdminUser && allowAdminBypass) {
       return (

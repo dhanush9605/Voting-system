@@ -41,7 +41,6 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
         'https://vora-system.vercel.app',
         'https://vora.vercel.app',
         'http://localhost',
-        'capacitor://localhost',
         'http://10.0.2.2'
     ];
 
