@@ -412,11 +412,38 @@ export const getPublicSettings = async (req: Request, res: Response) => {
         if (!settings) {
             settings = await Settings.create({});
         }
+
+        let finalEstimatedEndTime = settings.estimatedEndTime ?? '';
+        
+        // If the DB has a relative duration (legacy), convert it to absolute time 
+        // based on when the settings were last updated, so all clients sync perfectly.
+        if (finalEstimatedEndTime) {
+            const parsed = new Date(finalEstimatedEndTime);
+            if (isNaN(parsed.getTime())) {
+                const trimmed = finalEstimatedEndTime.trim().toLowerCase();
+                const baseDate = settings.updatedAt ? new Date(settings.updatedAt).getTime() : Date.now();
+                
+                if (/^\d+(\.\d+)?$/.test(trimmed)) {
+                    finalEstimatedEndTime = new Date(baseDate + parseFloat(trimmed) * 3600 * 1000).toISOString();
+                } else {
+                    const hourMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(h|hr|hrs|hour|hours)$/);
+                    if (hourMatch) {
+                        finalEstimatedEndTime = new Date(baseDate + parseFloat(hourMatch[1]) * 3600 * 1000).toISOString();
+                    } else {
+                        const minMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(m|min|mins|minute|minutes)$/);
+                        if (minMatch) {
+                            finalEstimatedEndTime = new Date(baseDate + parseFloat(minMatch[1]) * 60 * 1000).toISOString();
+                        }
+                    }
+                }
+            }
+        }
+
         res.json({
             maintenanceMode: settings.maintenanceMode ?? false,
             maintenanceTitle: settings.maintenanceTitle ?? 'System Under Maintenance',
             maintenanceMessage: settings.maintenanceMessage ?? 'Vora is currently undergoing scheduled maintenance to improve system performance and security. Please check back soon.',
-            estimatedEndTime: settings.estimatedEndTime ?? '',
+            estimatedEndTime: finalEstimatedEndTime,
             allowAdminBypass: settings.allowAdminBypass ?? true
         });
     } catch (error: any) {
