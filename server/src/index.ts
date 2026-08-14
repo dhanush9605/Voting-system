@@ -46,7 +46,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        const isLocalNetwork = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(origin || '');
+        if (!origin || process.env.NODE_ENV !== 'production' || allowedOrigins.includes(origin) || isLocalNetwork) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));

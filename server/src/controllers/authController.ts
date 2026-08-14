@@ -54,7 +54,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
         httpOnly: true,
         secure: isProduction,
         sameSite: isProduction ? 'none' : 'lax',
-        path: '/api/auth/refresh' // Restrict to refresh endpoint
+        path: '/'
     };
 
     if (rememberMe) {
@@ -367,7 +367,7 @@ export const refreshToken = async (req: Request, res: Response) => {
             httpOnly: true,
             secure: isProduction,
             sameSite: isProduction ? 'none' : 'lax',
-            path: '/api/auth/refresh',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
