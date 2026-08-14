@@ -273,8 +273,60 @@ const AdminSettings = () => {
                   id="mEndTime"
                   value={estimatedEndTime}
                   onChange={(e) => setEstimatedEndTime(e.target.value)}
-                  placeholder="e.g. Today at 4:00 PM UTC or 2 Hours"
+                  placeholder="e.g. 2 (for 2 hours), 30m, 2h, or 5:30 PM"
                 />
+                <p className="text-[11px] text-muted-foreground">
+                  Type hours (e.g. <span className="font-mono text-foreground font-semibold">2</span> or <span className="font-mono text-foreground font-semibold">2h</span>), minutes (<span className="font-mono text-foreground font-semibold">30m</span>), or click a preset:
+                </p>
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2.5 rounded-md"
+                    onClick={() => setEstimatedEndTime("30m")}
+                  >
+                    +30 Mins
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2.5 rounded-md"
+                    onClick={() => setEstimatedEndTime("1h")}
+                  >
+                    +1 Hour
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2.5 rounded-md"
+                    onClick={() => setEstimatedEndTime("2h")}
+                  >
+                    +2 Hours
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs px-2.5 rounded-md"
+                    onClick={() => setEstimatedEndTime("4h")}
+                  >
+                    +4 Hours
+                  </Button>
+                  {estimatedEndTime && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs px-2 text-destructive hover:text-destructive"
+                      onClick={() => setEstimatedEndTime("")}
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2 flex flex-col justify-end">

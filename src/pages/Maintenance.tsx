@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { Wrench, RefreshCw, Clock, ShieldCheck, ArrowRight, CheckCircle, Sparkles, HelpCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Wrench, RefreshCw, Lock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 interface MaintenanceProps {
   title?: string;
@@ -11,14 +10,94 @@ interface MaintenanceProps {
   allowAdminBypass?: boolean;
 }
 
+function parseEstimatedEndTime(inputStr: string): Date | null {
+  if (!inputStr || !inputStr.trim()) return null;
+
+  const trimmed = inputStr.trim().toLowerCase();
+
+  // 1. Pure number, e.g. "2" -> 2 hours from now
+  if (/^\d+(\.\d+)?$/.test(trimmed)) {
+    const hours = parseFloat(trimmed);
+    return new Date(Date.now() + hours * 3600 * 1000);
+  }
+
+  // 2. Hours syntax, e.g. "2h", "2 hr", "2 hours", "2.5h"
+  const hourMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(h|hr|hrs|hour|hours)$/);
+  if (hourMatch) {
+    const hours = parseFloat(hourMatch[1]);
+    return new Date(Date.now() + hours * 3600 * 1000);
+  }
+
+  // 3. Minutes syntax, e.g. "30m", "30 min", "30 mins", "45 minutes"
+  const minMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(m|min|mins|minute|minutes)$/);
+  if (minMatch) {
+    const minutes = parseFloat(minMatch[1]);
+    return new Date(Date.now() + minutes * 60 * 1000);
+  }
+
+  // 4. Standard Date parse
+  const parsed = new Date(inputStr);
+  if (!isNaN(parsed.getTime())) {
+    return parsed;
+  }
+
+  return null;
+}
+
 export default function Maintenance({
-  title = "System Under Maintenance",
-  message = "Vora is currently undergoing scheduled system maintenance to enhance platform security and performance. Please check back shortly.",
+  title = "We’ll be back in a few hours.",
+  message = "The Vora platform is offline for planned maintenance. Nothing has been lost and no action is needed on your side — everything will be waiting for you when we return.",
   estimatedEndTime = "",
   onRefresh,
   allowAdminBypass = true,
 }: MaintenanceProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [targetTimeString, setTargetTimeString] = useState<string>("");
+
+  const parsedTargetDate = parseEstimatedEndTime(estimatedEndTime);
+  const hasEstimatedEndTime = Boolean(parsedTargetDate !== null);
+
+  useEffect(() => {
+    if (!parsedTargetDate) return;
+
+    const targetDate = parsedTargetDate;
+
+    // Format local and UTC time strings
+    try {
+      const localTimeStr = targetDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+      const utcTimeStr = targetDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }) + ' UTC';
+      setTargetTimeString(`Back online around ${localTimeStr} (${utcTimeStr})`);
+    } catch {
+      setTargetTimeString("Back online shortly");
+    }
+
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const diff = targetDate.getTime() - now;
+
+      if (diff <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        // Auto-check status when countdown hits zero
+        if (onRefresh) {
+          onRefresh();
+        }
+      } else {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setTimeLeft({ hours, minutes, seconds });
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [estimatedEndTime, hasEstimatedEndTime]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -30,85 +109,72 @@ export default function Maintenance({
     setTimeout(() => setIsRefreshing(false), 800);
   };
 
+  const formatDigits = (val: number) => String(val).padStart(2, '0');
+
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 bg-background text-foreground overflow-hidden">
-      {/* Dynamic Animated Background Orbs */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-1/4 left-1/3 w-[350px] h-[350px] bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-[#09090b] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans selection:bg-white selection:text-black">
+      {/* Background Subtle Ambient Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] bg-zinc-800/10 rounded-full blur-[160px] pointer-events-none" />
 
-      {/* Main Glassmorphism Card */}
-      <div className="relative z-10 w-full max-w-xl mx-auto text-center space-y-8 p-8 md:p-12 rounded-3xl border border-border/50 bg-card/60 backdrop-blur-xl shadow-2xl shadow-primary/5">
+      {/* Main Container */}
+      <div className="relative z-10 max-w-2xl w-full text-center flex flex-col items-center space-y-8 py-10 px-4">
         
-        {/* Header Icon with Glowing Halo */}
-        <div className="relative inline-flex items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-amber-500/20 blur-xl animate-ping opacity-75" />
-          <div className="relative w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-500/5 border border-amber-500/30 flex items-center justify-center shadow-inner">
-            <Wrench className="w-10 h-10 text-amber-500 animate-bounce" style={{ animationDuration: '3s' }} />
-          </div>
+        {/* Header Pill / Status Badge */}
+        <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-400 uppercase tracking-[0.2em] font-medium bg-zinc-900/80 border border-zinc-800/80 px-3.5 py-1.5 rounded-full shadow-sm">
+          <Wrench className="w-3.5 h-3.5 text-zinc-400" />
+          <span>503</span>
+          <span className="text-zinc-600">•</span>
+          <span>Scheduled Maintenance</span>
         </div>
 
-        {/* Status Badge */}
-        <div className="flex justify-center">
-          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 px-4 py-1 rounded-full text-xs font-semibold tracking-wider uppercase flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-            Maintenance In Progress
-          </Badge>
-        </div>
+        {/* Title */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-white leading-[1.12]">
+          {title}
+        </h1>
 
-        {/* Title & Message */}
-        <div className="space-y-3">
-          <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight text-foreground">
-            {title}
-          </h1>
-          <p className="text-muted-foreground text-sm md:text-base leading-relaxed max-w-lg mx-auto">
-            {message}
-          </p>
-        </div>
+        {/* Message */}
+        <p className="text-zinc-400 text-sm sm:text-base max-w-xl leading-relaxed font-normal text-center">
+          {message}
+        </p>
 
-        {/* Estimated Time Pill (If Provided) */}
-        {estimatedEndTime && (
-          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-secondary/60 border border-border/60 text-sm font-medium text-foreground">
-            <Clock className="w-4 h-4 text-amber-500" />
-            <span>Estimated End Time:</span>
-            <span className="font-bold text-amber-600 dark:text-amber-400">{estimatedEndTime}</span>
+        {/* Live Digital Clock Countdown - Only Rendered If Admin Provided Estimated End Time */}
+        {hasEstimatedEndTime && (
+          <div className="pt-2 flex flex-col items-center">
+            <div className="font-mono text-5xl sm:text-6xl md:text-7xl font-normal tracking-[0.1em] text-white select-none">
+              {formatDigits(timeLeft.hours)}:{formatDigits(timeLeft.minutes)}:{formatDigits(timeLeft.seconds)}
+            </div>
+            <div className="text-[11px] font-mono uppercase tracking-[0.25em] text-zinc-500 font-semibold mt-3">
+              Estimated time until we reopen
+            </div>
+            {targetTimeString && (
+              <div className="text-xs sm:text-sm text-zinc-300 font-medium mt-3">
+                {targetTimeString}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        {/* Action Button & Bypass */}
+        <div className="pt-4 flex flex-col items-center gap-4">
           <Button
             onClick={handleRefresh}
             disabled={isRefreshing}
-            size="lg"
-            className="w-full sm:w-auto font-semibold shadow-lg gap-2"
+            className="bg-white hover:bg-zinc-200 text-black text-sm font-semibold px-7 py-2.5 h-auto rounded-xl transition-all duration-200 flex items-center justify-center gap-2.5 shadow-lg shadow-white/5 active:scale-95 border-none"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Checking Status...' : 'Check Status'}
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin text-black" : "text-black"}`} />
+            <span>{isRefreshing ? "Checking..." : "Check again"}</span>
           </Button>
 
           {allowAdminBypass && (
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => window.location.href = '/login'}
-              className="w-full sm:w-auto gap-2 border-border/60 hover:bg-secondary/50 font-medium"
+            <button
+              onClick={() => (window.location.href = "/login")}
+              className="text-xs font-mono text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1.5 mt-2 group"
             >
-              Sign In <ArrowRight className="w-4 h-4" />
-            </Button>
+              <Lock className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+              <span>Admin Login Bypass</span>
+              <ArrowRight className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
+            </button>
           )}
-        </div>
-
-        {/* Features Protection Note */}
-        <div className="pt-6 border-t border-border/40 grid grid-cols-2 gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
-            <span>Data Integrity Secured</span>
-          </div>
-          <div className="flex items-center justify-center gap-1.5">
-            <CheckCircle className="w-4 h-4 text-blue-500" />
-            <span>Votes & Ledger Protected</span>
-          </div>
         </div>
 
       </div>

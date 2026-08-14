@@ -24,8 +24,8 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
     try {
       const { data } = await api.get('/settings/public');
       setMaintenanceMode(!!data.maintenanceMode);
-      setMaintenanceTitle(data.maintenanceTitle || 'System Under Maintenance');
-      setMaintenanceMessage(data.maintenanceMessage || 'Vora is currently undergoing scheduled maintenance.');
+      setMaintenanceTitle(data.maintenanceTitle || 'We’ll be back in a few hours.');
+      setMaintenanceMessage(data.maintenanceMessage || 'The Vora platform is offline for planned maintenance. Nothing has been lost and no action is needed on your side — everything will be waiting for you when we return.');
       setEstimatedEndTime(data.estimatedEndTime || '');
       setAllowAdminBypass(data.allowAdminBypass ?? true);
     } catch (error) {
