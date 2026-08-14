@@ -7,6 +7,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { MaintenanceGuard } from "@/components/auth/MaintenanceGuard";
 
 // Public pages
 import Landing from "./pages/Landing";
@@ -34,36 +35,38 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Landing />} />
-            <Route path="/results/public" element={<PublicResults />} />
-            <Route path="/verify-vote" element={<BlockchainVerification />} />
+          <MaintenanceGuard>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Landing />} />
+              <Route path="/results/public" element={<PublicResults />} />
+              <Route path="/verify-vote" element={<BlockchainVerification />} />
 
-            {/* Auth routes */}
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-            </Route>
+              {/* Auth routes */}
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+              </Route>
 
-            {/* Voter routes */}
-            <Route element={
-              <ProtectedRoute allowedRoles={['voter']}>
-                <AppLayout />
-              </ProtectedRoute>
-            }>
-              <Route path="/voter/dashboard" element={<VoterDashboard />} />
-              <Route path="/voter/profile" element={<VoterProfile />} />
-              <Route path="/vote" element={<VotePage />} />
-              <Route path="/verify-face" element={<FaceVerification />} />
-              <Route path="/complete-profile" element={<CompleteProfile />} />
-            </Route>
+              {/* Voter routes */}
+              <Route element={
+                <ProtectedRoute allowedRoles={['voter']}>
+                  <AppLayout />
+                </ProtectedRoute>
+              }>
+                <Route path="/voter/dashboard" element={<VoterDashboard />} />
+                <Route path="/voter/profile" element={<VoterProfile />} />
+                <Route path="/vote" element={<VotePage />} />
+                <Route path="/verify-face" element={<FaceVerification />} />
+                <Route path="/complete-profile" element={<CompleteProfile />} />
+              </Route>
 
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </MaintenanceGuard>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

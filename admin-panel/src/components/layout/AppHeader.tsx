@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, Globe, User, ChevronDown, Settings, LogOut } from "lucide-react";
+import { Search, Bell, Globe, User, ChevronDown, Settings, LogOut, Wrench, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +46,9 @@ export function AppHeader() {
 
       {/* Right section */}
       <div className="flex items-center gap-1 sm:gap-3">
+        {/* Maintenance Quick Access Switch */}
+        <MaintenanceQuickToggle />
+
         {/* Notifications */}
         <NotificationsMenu />
 
@@ -194,5 +198,74 @@ function NotificationsMenu() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+function MaintenanceQuickToggle() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [maintenanceMode, setMaintenanceMode] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const fetchStatus = async () => {
+    try {
+      const { data } = await api.get('/admin/settings');
+      setMaintenanceMode(!!data.maintenanceMode);
+    } catch {
+      // ignore header fetch error silently
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const nextState = !maintenanceMode;
+    setLoading(true);
+    try {
+      await api.put('/admin/settings', { maintenanceMode: nextState });
+      setMaintenanceMode(nextState);
+      toast({
+        title: nextState ? "Maintenance Mode Activated 🛠️" : "Maintenance Mode Disabled ✅",
+        description: nextState 
+          ? "Vora Client Page is now in maintenance mode."
+          : "Vora Client Page is live and accessible.",
+        variant: nextState ? "destructive" : "default"
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update maintenance state.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center">
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={loading}
+        onClick={handleToggle}
+        title={maintenanceMode ? "Click to turn off maintenance mode" : "Click to turn on maintenance mode"}
+        className={`flex items-center gap-2 px-3 py-1.5 h-8 rounded-full text-xs font-semibold transition-all ${
+          maintenanceMode 
+            ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 animate-pulse hover:bg-amber-500/30" 
+            : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+        }`}
+      >
+        <Wrench className={`w-3.5 h-3.5 ${maintenanceMode ? 'text-amber-500' : ''}`} />
+        <span className="hidden sm:inline">
+          {maintenanceMode ? "Maintenance ON" : "Maintenance"}
+        </span>
+      </Button>
+    </div>
   );
 }

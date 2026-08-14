@@ -12,6 +12,7 @@ import adminRoutes from './routes/adminRoutes';
 import candidateRoutes from './routes/candidateRoutes';
 import voteRoutes from './routes/voteRoutes';
 import electionRoutes from './routes/electionRoutes';
+import settingsRoutes from './routes/settingsRoutes';
 
 export const app = express();
 const PORT = process.env.PORT || 5000;
@@ -69,6 +70,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/candidates', candidateRoutes);
 app.use('/api/vote', voteRoutes);
 app.use('/api/election', electionRoutes);
+app.use('/api/settings', settingsRoutes);
 
 app.get('/api', (req, res) => {
     res.send('Voting System API is running');

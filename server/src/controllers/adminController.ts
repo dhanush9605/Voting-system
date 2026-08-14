@@ -324,7 +324,14 @@ export const getSettings = async (req: AuthRequest, res: Response) => {
 // @access  Private/Admin
 export const updateSettings = async (req: AuthRequest, res: Response) => {
     try {
-        const { emailNotificationsEnabled } = req.body;
+        const { 
+            emailNotificationsEnabled, 
+            maintenanceMode, 
+            maintenanceTitle, 
+            maintenanceMessage, 
+            estimatedEndTime, 
+            allowAdminBypass 
+        } = req.body;
         
         let settings = await Settings.findOne();
         if (!settings) {
@@ -335,10 +342,52 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
             settings.emailNotificationsEnabled = emailNotificationsEnabled;
         }
 
+        if (maintenanceMode !== undefined) {
+            settings.maintenanceMode = maintenanceMode;
+        }
+
+        if (maintenanceTitle !== undefined) {
+            settings.maintenanceTitle = maintenanceTitle;
+        }
+
+        if (maintenanceMessage !== undefined) {
+            settings.maintenanceMessage = maintenanceMessage;
+        }
+
+        if (estimatedEndTime !== undefined) {
+            settings.estimatedEndTime = estimatedEndTime;
+        }
+
+        if (allowAdminBypass !== undefined) {
+            settings.allowAdminBypass = allowAdminBypass;
+        }
+
         await settings.save();
         res.json(settings);
     } catch (error: any) {
         console.error('Error updating settings:', error);
         res.status(500).json({ message: 'Error updating settings' });
+    }
+};
+
+// @desc    Get public system settings (maintenance mode, public info)
+// @route   GET /api/settings/public
+// @access  Public
+export const getPublicSettings = async (req: Request, res: Response) => {
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) {
+            settings = await Settings.create({});
+        }
+        res.json({
+            maintenanceMode: settings.maintenanceMode ?? false,
+            maintenanceTitle: settings.maintenanceTitle ?? 'System Under Maintenance',
+            maintenanceMessage: settings.maintenanceMessage ?? 'Vora is currently undergoing scheduled maintenance to improve system performance and security. Please check back soon.',
+            estimatedEndTime: settings.estimatedEndTime ?? '',
+            allowAdminBypass: settings.allowAdminBypass ?? true
+        });
+    } catch (error: any) {
+        console.error('Error fetching public settings:', error);
+        res.status(500).json({ message: 'Error fetching public settings' });
     }
 };
