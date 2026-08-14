@@ -65,6 +65,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
     res.cookie('refresh_token', refreshToken, refreshTokenOptions);
 
     res.status(statusCode).json({
+        token: accessToken,
         _id: user._id,
         name: user.name,
         email: user.email,
@@ -371,7 +372,7 @@ export const refreshToken = async (req: Request, res: Response) => {
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
         });
 
-        res.json({ message: 'Token refreshed' });
+        res.json({ token: accessToken, message: 'Token refreshed' });
 
     } catch (error) {
         res.status(401).json({ message: 'Not authorized, token failed' });

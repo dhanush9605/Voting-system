@@ -47,7 +47,13 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
   const isAdminUser = user?.role === 'admin';
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background" />;
+    return (
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-zinc-600 border-t-white animate-spin" />
+        </div>
+      </div>
+    );
   }
 
   if (maintenanceMode) {

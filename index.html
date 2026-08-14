@@ -3,12 +3,18 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>VORA - Decentralized Hybrid Voting</title>
   <meta name="description"
     content="VORA: A secure, transparent, and modern hybrid voting platform for college elections, leveraging MERN and Ethereum Blockchain." />
   <meta name="author" content="Dhanush Rajesh" />
   <link rel="canonical" href="https://vora-network.vercel.app" />
+
+  <!-- iOS Safari / PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#09090b" />
 
   <meta property="og:title" content="VORA - Decentralized Hybrid Voting" />
   <meta property="og:description" content="A secure, transparent, and modern voting platform for college elections." />
@@ -18,6 +24,16 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@VotingSystem" />
   <meta name="twitter:image" content="/placeholder.svg" />
+
+  <!-- Prevent white flash on iOS Safari before React mounts -->
+  <style>
+    html, body, #root {
+      background-color: #09090b;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
 </head>
 
 <body>
@@ -25,4 +41,4 @@
   <script type="module" src="/src/main.tsx"></script>
 </body>
 
-</html>
+</html>

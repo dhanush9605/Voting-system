@@ -7,6 +7,18 @@ const api = axios.create({
     withCredentials: true, // Important for cookies
 });
 
+// Request interceptor for Bearer token fallback (Crucial for Safari / iOS ITP cross-site cookie blocking)
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('admin_token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
 api.interceptors.response.use(
     (response) => response,
     async (error) => {

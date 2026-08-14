@@ -319,6 +319,39 @@ export const getSettings = async (req: AuthRequest, res: Response) => {
     }
 };
 
+// Converts relative duration strings (e.g. "2", "30m", "2h") into absolute ISO timestamps
+// so the target time persists correctly across page refreshes.
+function convertToAbsoluteTargetTime(inputStr: string): string {
+    if (!inputStr || !inputStr.trim()) return "";
+
+    const trimmed = inputStr.trim().toLowerCase();
+
+    // Pure number -> hours, e.g. "2" -> 2 hours from now
+    if (/^\d+(\.\d+)?$/.test(trimmed)) {
+        return new Date(Date.now() + parseFloat(trimmed) * 3600 * 1000).toISOString();
+    }
+
+    // Hours syntax, e.g. "2h", "2hr", "2 hours"
+    const hourMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(h|hr|hrs|hour|hours)$/);
+    if (hourMatch) {
+        return new Date(Date.now() + parseFloat(hourMatch[1]) * 3600 * 1000).toISOString();
+    }
+
+    // Minutes syntax, e.g. "30m", "30 min", "45 minutes"
+    const minMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(m|min|mins|minute|minutes)$/);
+    if (minMatch) {
+        return new Date(Date.now() + parseFloat(minMatch[1]) * 60 * 1000).toISOString();
+    }
+
+    // Already an absolute date string — preserve as-is
+    const parsed = new Date(inputStr);
+    if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+    }
+
+    return inputStr;
+}
+
 // @desc    Update global settings
 // @route   PUT /api/admin/settings
 // @access  Private/Admin
@@ -355,7 +388,7 @@ export const updateSettings = async (req: AuthRequest, res: Response) => {
         }
 
         if (estimatedEndTime !== undefined) {
-            settings.estimatedEndTime = estimatedEndTime;
+            settings.estimatedEndTime = convertToAbsoluteTargetTime(estimatedEndTime);
         }
 
         if (allowAdminBypass !== undefined) {

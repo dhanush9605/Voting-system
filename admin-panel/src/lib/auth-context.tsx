@@ -52,12 +52,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (role !== 'admin' && data.role !== role) {
         await api.post('/auth/logout');
+        localStorage.removeItem('auth_token');
         throw new Error(`This account is not registered as a ${role}`);
+      }
+
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
       }
 
       setState({
         user: data,
-        token: 'cookie',
+        token: data.token || 'cookie',
         isAuthenticated: true,
         isLoading: false,
       });
@@ -67,15 +72,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-
-
   const loginWithStudentId = useCallback(async (studentId: string, password: string, rememberMe: boolean, faceDescriptor?: number[]) => {
     try {
       const { data } = await api.post('/auth/login', { studentId, password, rememberMe, faceDescriptor });
 
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
+
       setState({
         user: data,
-        token: 'cookie',
+        token: data.token || 'cookie',
         isAuthenticated: true,
         isLoading: false,
       });
@@ -90,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Logout failed', error);
     } finally {
+      localStorage.removeItem('auth_token');
       setState({
         user: null,
         token: null,
