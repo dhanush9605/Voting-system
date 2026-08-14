@@ -14,25 +14,46 @@ function parseEstimatedEndTime(inputStr: string): Date | null {
   if (!inputStr || !inputStr.trim()) return null;
 
   const trimmed = inputStr.trim().toLowerCase();
+  const cacheKey = `vora_maintenance_target_${trimmed}`;
+
+  const getCachedOrNew = (calculateTarget: () => Date) => {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const cachedDate = new Date(cached);
+      // Only use cached date if it's still in the future
+      if (cachedDate.getTime() > Date.now()) {
+        return cachedDate;
+      }
+    }
+    const target = calculateTarget();
+    localStorage.setItem(cacheKey, target.toISOString());
+    return target;
+  };
 
   // 1. Pure number, e.g. "2" -> 2 hours from now
   if (/^\d+(\.\d+)?$/.test(trimmed)) {
-    const hours = parseFloat(trimmed);
-    return new Date(Date.now() + hours * 3600 * 1000);
+    return getCachedOrNew(() => {
+      const hours = parseFloat(trimmed);
+      return new Date(Date.now() + hours * 3600 * 1000);
+    });
   }
 
   // 2. Hours syntax, e.g. "2h", "2 hr", "2 hours", "2.5h"
   const hourMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(h|hr|hrs|hour|hours)$/);
   if (hourMatch) {
-    const hours = parseFloat(hourMatch[1]);
-    return new Date(Date.now() + hours * 3600 * 1000);
+    return getCachedOrNew(() => {
+      const hours = parseFloat(hourMatch[1]);
+      return new Date(Date.now() + hours * 3600 * 1000);
+    });
   }
 
   // 3. Minutes syntax, e.g. "30m", "30 min", "30 mins", "45 minutes"
   const minMatch = trimmed.match(/^(\d+(\.\d+)?)\s*(m|min|mins|minute|minutes)$/);
   if (minMatch) {
-    const minutes = parseFloat(minMatch[1]);
-    return new Date(Date.now() + minutes * 60 * 1000);
+    return getCachedOrNew(() => {
+      const minutes = parseFloat(minMatch[1]);
+      return new Date(Date.now() + minutes * 60 * 1000);
+    });
   }
 
   // 4. Standard Date parse
