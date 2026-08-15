@@ -45,11 +45,17 @@ export interface ElectionInterface extends Interface {
       | "getAllCandidates"
       | "getCandidate"
       | "owner"
+      | "removeCandidate"
+      | "resetVotes"
       | "vote"
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic: "CandidateAdded" | "VoteCast"
+    nameOrSignatureOrTopic:
+      | "CandidateAdded"
+      | "CandidateRemoved"
+      | "VoteCast"
+      | "VotesReset"
   ): EventFragment;
 
   encodeFunctionData(
@@ -70,6 +76,14 @@ export interface ElectionInterface extends Interface {
     values: [string]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "removeCandidate",
+    values: [string]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "resetVotes",
+    values: [string[]]
+  ): string;
   encodeFunctionData(functionFragment: "vote", values: [string]): string;
 
   decodeFunctionResult(
@@ -90,6 +104,11 @@ export interface ElectionInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "removeCandidate",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "resetVotes", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "vote", data: BytesLike): Result;
 }
 
@@ -106,12 +125,36 @@ export namespace CandidateAddedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace CandidateRemovedEvent {
+  export type InputTuple = [id: string];
+  export type OutputTuple = [id: string];
+  export interface OutputObject {
+    id: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace VoteCastEvent {
   export type InputTuple = [candidateId: string, newVoteCount: BigNumberish];
   export type OutputTuple = [candidateId: string, newVoteCount: bigint];
   export interface OutputObject {
     candidateId: string;
     newVoteCount: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace VotesResetEvent {
+  export type InputTuple = [candidateIds: string[]];
+  export type OutputTuple = [candidateIds: string[]];
+  export interface OutputObject {
+    candidateIds: string[];
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -192,6 +235,10 @@ export interface Election extends BaseContract {
 
   owner: TypedContractMethod<[], [string], "view">;
 
+  removeCandidate: TypedContractMethod<[_id: string], [void], "nonpayable">;
+
+  resetVotes: TypedContractMethod<[_ids: string[]], [void], "nonpayable">;
+
   vote: TypedContractMethod<[_candidateId: string], [void], "nonpayable">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -223,6 +270,12 @@ export interface Election extends BaseContract {
     nameOrSignature: "owner"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
+    nameOrSignature: "removeCandidate"
+  ): TypedContractMethod<[_id: string], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "resetVotes"
+  ): TypedContractMethod<[_ids: string[]], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "vote"
   ): TypedContractMethod<[_candidateId: string], [void], "nonpayable">;
 
@@ -234,11 +287,25 @@ export interface Election extends BaseContract {
     CandidateAddedEvent.OutputObject
   >;
   getEvent(
+    key: "CandidateRemoved"
+  ): TypedContractEvent<
+    CandidateRemovedEvent.InputTuple,
+    CandidateRemovedEvent.OutputTuple,
+    CandidateRemovedEvent.OutputObject
+  >;
+  getEvent(
     key: "VoteCast"
   ): TypedContractEvent<
     VoteCastEvent.InputTuple,
     VoteCastEvent.OutputTuple,
     VoteCastEvent.OutputObject
+  >;
+  getEvent(
+    key: "VotesReset"
+  ): TypedContractEvent<
+    VotesResetEvent.InputTuple,
+    VotesResetEvent.OutputTuple,
+    VotesResetEvent.OutputObject
   >;
 
   filters: {
@@ -253,6 +320,17 @@ export interface Election extends BaseContract {
       CandidateAddedEvent.OutputObject
     >;
 
+    "CandidateRemoved(string)": TypedContractEvent<
+      CandidateRemovedEvent.InputTuple,
+      CandidateRemovedEvent.OutputTuple,
+      CandidateRemovedEvent.OutputObject
+    >;
+    CandidateRemoved: TypedContractEvent<
+      CandidateRemovedEvent.InputTuple,
+      CandidateRemovedEvent.OutputTuple,
+      CandidateRemovedEvent.OutputObject
+    >;
+
     "VoteCast(string,uint256)": TypedContractEvent<
       VoteCastEvent.InputTuple,
       VoteCastEvent.OutputTuple,
@@ -262,6 +340,17 @@ export interface Election extends BaseContract {
       VoteCastEvent.InputTuple,
       VoteCastEvent.OutputTuple,
       VoteCastEvent.OutputObject
+    >;
+
+    "VotesReset(string[])": TypedContractEvent<
+      VotesResetEvent.InputTuple,
+      VotesResetEvent.OutputTuple,
+      VotesResetEvent.OutputObject
+    >;
+    VotesReset: TypedContractEvent<
+      VotesResetEvent.InputTuple,
+      VotesResetEvent.OutputTuple,
+      VotesResetEvent.OutputObject
     >;
   };
 }

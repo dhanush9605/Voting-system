@@ -13,7 +13,7 @@ import { sendEmail } from '../utils/email';
 
 const generateAccessToken = (id: string) => {
     return jwt.sign({ id }, process.env.JWT_SECRET || 'secret', {
-        expiresIn: '15m',
+        expiresIn: '30d',
     });
 };
 
@@ -47,7 +47,7 @@ const sendTokenResponse = async (user: IUser, statusCode: number, res: Response,
         httpOnly: true,
         secure: isProduction, // HTTPS required for None
         sameSite: isProduction ? 'none' : 'lax', // Must be 'none' for cross-site
-        maxAge: 15 * 60 * 1000 // 15 minutes
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
     });
 
     const refreshTokenOptions: any = {

@@ -100,11 +100,25 @@ export const updateCandidate = async (req: Request, res: Response) => {
 // @access  Private/Admin
 export const deleteCandidate = async (req: Request, res: Response) => {
     try {
-        const candidate = await Candidate.findById(req.params.id);
+        const candidateId = req.params.id;
+        const candidate = await Candidate.findById(candidateId);
 
         if (candidate) {
             await candidate.deleteOne();
             res.json({ message: 'Candidate removed' });
+
+            // --- BLOCKCHAIN INTEGRATION ---
+            if (contract) {
+                try {
+                    console.log(`🔗 Removing candidate ${candidateId} from blockchain...`);
+                    const tx = await contract.removeCandidate(candidateId);
+                    await tx.wait();
+                    console.log(`✅ Candidate removed from blockchain!`);
+                } catch (bcError) {
+                    console.error("⚠️ Blockchain sync failed (Remove Candidate):", bcError);
+                }
+            }
+            // -----------------------------
         } else {
             res.status(404).json({ message: 'Candidate not found' });
         }

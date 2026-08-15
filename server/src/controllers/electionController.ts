@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../middleware/authMiddleware';
 import Notification from '../models/Notification';
 import { sendEmail } from '../utils/email';
+import { contract } from '../config/blockchain';
 
 // @desc    Get public election results
 // @route   GET /api/election/results
@@ -512,11 +513,26 @@ export const resetElection = async (req: AuthRequest, res: Response) => {
 
         try {
             // 1. Reset Candidates for this election
+            const candidatesToReset = await Candidate.find({ electionId: activeElection._id }).select('_id').lean();
+            const candidateIds = candidatesToReset.map(c => c._id.toString());
+            
             await Candidate.updateMany(
                 { electionId: activeElection._id }, 
                 { voteCount: 0 }, 
                 session ? { session } : {}
             );
+
+            // 1b. Reset on Blockchain
+            if (contract && candidateIds.length > 0) {
+                try {
+                    console.log(`🔗 Resetting votes for ${candidateIds.length} candidates on blockchain...`);
+                    const tx = await contract.resetVotes(candidateIds);
+                    await tx.wait();
+                    console.log(`✅ Blockchain votes reset! Tx: ${tx.hash}`);
+                } catch (bcError) {
+                    console.error("⚠️ Blockchain resetVotes failed:", bcError);
+                }
+            }
 
             // 2. Reset Users who voted in THIS election
             await User.updateMany(
@@ -585,7 +601,24 @@ export const deleteElection = async (req: AuthRequest, res: Response) => {
 
         try {
             // A. Delete Candidates
+            const candidatesToDelete = await Candidate.find({ electionId: id }).select('_id').lean();
+            const candidateIds = candidatesToDelete.map(c => c._id.toString());
+            
             await Candidate.deleteMany({ electionId: id }, session ? { session } : {});
+
+            // A2. Delete from Blockchain
+            if (contract && candidateIds.length > 0) {
+                try {
+                    console.log(`🔗 Removing ${candidateIds.length} candidates from blockchain...`);
+                    for (const cid of candidateIds) {
+                        const tx = await contract.removeCandidate(cid);
+                        await tx.wait(); 
+                    }
+                    console.log(`✅ Blockchain candidates removed!`);
+                } catch (bcError) {
+                    console.error("⚠️ Blockchain removeCandidate failed:", bcError);
+                }
+            }
 
             // B. Clean up User History
             await User.updateMany(

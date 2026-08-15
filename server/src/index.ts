@@ -88,8 +88,14 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 if (require.main === module && process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+    // Connect DB first, then start accepting requests
+    connectDB().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    }).catch((err) => {
+        console.error('❌ Failed to connect to MongoDB. Server not started.', err.message);
+        process.exit(1);
     });
 }
 

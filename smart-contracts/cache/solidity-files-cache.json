@@ -36,6 +36,42 @@
       "artifacts": [
         "Election"
       ]
+    },
+    "C:\\Users\\dhanu\\Downloads\\Voting-system\\smart-contracts\\contracts\\Election.sol": {
+      "lastModificationDate": 1786812171975,
+      "contentHash": "66128c726b1c34f80ef5d80245b267aa",
+      "sourceName": "contracts/Election.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "Election"
+      ]
     }
   }
 }
