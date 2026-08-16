@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Lock, Eye, EyeOff, Check, Mail, Bell, Wrench, AlertTriangle, Save, Clock, ShieldCheck, ExternalLink } from "lucide-react";
+import { Lock, Eye, EyeOff, Check, Mail, Bell, Wrench, AlertTriangle, Save, Clock, ShieldCheck, ExternalLink, Smartphone, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -406,6 +406,41 @@ const AdminSettings = () => {
                   className="data-[state=checked]:bg-blue-500"
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Mobile Application */}
+        <Card className="lg:col-span-2 max-w-4xl border-border/50">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-teal-500/10 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <CardTitle>VORA Mobile Application</CardTitle>
+                <CardDescription>Download the official mobile client for decentralized operations</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-muted/20 transition-colors gap-4">
+              <div className="space-y-0.5">
+                <h4 className="font-semibold text-base">Android App (APK)</h4>
+                <p className="text-sm text-muted-foreground max-w-[450px]">
+                  Download and install the official VORA Admin application directly onto your Android device to manage system settings, voters, and elections on the go.
+                </p>
+              </div>
+              <a
+                href="https://expo.dev/artifacts/eas/qvL4Hn4NqpCdOu_4CCKC7vaTxgt4fcdhaVHh9DvxT8k.apk"
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto"
+              >
+                <Button className="w-full sm:w-auto gap-2 font-semibold">
+                  <Download className="w-4 h-4" /> Download APK
+                </Button>
+              </a>
             </div>
           </CardContent>
         </Card>
