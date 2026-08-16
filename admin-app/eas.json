@@ -13,7 +13,7 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://vora-admin-seven.vercel.app/api"
+        "EXPO_PUBLIC_API_URL": "https://vora-network.vercel.app/api"
       },
       "android": {
         "buildType": "apk"
