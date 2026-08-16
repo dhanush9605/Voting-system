@@ -13,8 +13,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#09090b",
-        "foregroundImage": "./assets/images/logo.png",
-        "monochromeImage": "./assets/images/logo.png"
+        "foregroundImage": "./assets/images/logo.png"
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.dango66.adminapp"
