@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, User, KeyRound, GraduationCap, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, KeyRound, GraduationCap, Eye, EyeOff, Download, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -314,7 +314,6 @@ export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: 
 
 
 
-                        {/* Register link for voters */}
                         {role === 'voter' && (
                             <p className="text-center text-sm text-muted-foreground">
                                 Don't have an account?{' '}
@@ -324,6 +323,21 @@ export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: 
                             </p>
                         )}
 
+                        {role === 'admin' && (
+                            <div className="pt-4 border-t border-border/60 text-center flex flex-col items-center justify-center gap-2">
+                                <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                                    <Smartphone className="w-3.5 h-3.5 text-primary" /> Want VORA on your phone?
+                                </span>
+                                <a 
+                                    href="https://expo.dev/artifacts/eas/qvL4Hn4NqpCdOu_4CCKC7vaTxgt4fcdhaVHh9DvxT8k.apk" 
+                                    target="_blank" 
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline font-semibold"
+                                >
+                                    <Download className="w-4 h-4" /> Download VORA Admin App (APK)
+                                </a>
+                            </div>
+                        )}
 
                     </form>
                 )}
