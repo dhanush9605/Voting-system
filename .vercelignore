@@ -1,6 +1,0 @@
-# Prevent Vercel from auto-compiling api/index.ts as ESM.
-# We commit a pre-built api/index.cjs (CJS via esbuild) instead.
-# The .cjs extension guarantees Node.js always loads it as CommonJS
-# regardless of the root package.json "type":"module" setting.
-api/index.ts
-api/index.js

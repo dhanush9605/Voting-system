@@ -1,6 +1,5 @@
 import { ethers } from 'ethers';
-import dotenv from 'dotenv';
-dotenv.config();
+
 
 const privateKey = process.env.PRIVATE_KEY;
 if (privateKey) {

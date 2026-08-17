@@ -5,7 +5,7 @@ import Candidate from '../models/Candidate';
 import User from '../models/User';
 import connectDB from '../config/db';
 
-dotenv.config();
+
 
 const migrate = async () => {
     try {

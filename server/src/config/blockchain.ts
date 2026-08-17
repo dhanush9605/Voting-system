@@ -1,9 +1,5 @@
 import { ethers } from 'ethers';
-import dotenv from 'dotenv';
-import path from 'path';
 
-// Load .env from root or current dir
-dotenv.config();
 
 const RPC_URL = process.env.SEPOLIA_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
