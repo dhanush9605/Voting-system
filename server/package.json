@@ -4,8 +4,7 @@
   "description": "Backend for Voting System",
   "main": "dist/index.js",
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "nodemon src/index.ts",
+    "dev": "nodemon --exec \"ts-node -r dotenv/config\" src/index.ts",
     "build": "tsc",
     "test": "jest",
     "seed-admin": "ts-node scripts/seedAdmin.ts"
