@@ -1,6 +1,6 @@
 import express from 'express';
-import { registerUser, loginUser, getUserProfile, refreshToken, logoutUser, updatePassword, verifyFace, updateFaceData, savePushToken } from '../controllers/authController';
-import { protect } from '../middleware/authMiddleware';
+import { registerUser, loginUser, getUserProfile, refreshToken, logoutUser, updatePassword, verifyFace, updateFaceData, savePushToken } from '../controllers/authController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -16,7 +16,7 @@ router.post('/verify-face', protect, verifyFace);
 router.put('/push-token', protect, savePushToken);
 
 // Notification Routes
-import { getUserNotifications, markNotificationRead, markAllNotificationsRead } from '../controllers/notificationController';
+import { getUserNotifications, markNotificationRead, markAllNotificationsRead } from '../controllers/notificationController.js';
 router.get('/notifications', protect, getUserNotifications);
 router.put('/notifications/:id/read', protect, markNotificationRead);
 router.put('/notifications/read-all', protect, markAllNotificationsRead);

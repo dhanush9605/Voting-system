@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import User, { VerificationStatus } from '../models/User';
-import Candidate from '../models/Candidate';
-import Election from '../models/Election';
-import { AuthRequest } from '../middleware/authMiddleware';
-import { contract, wallet } from '../config/blockchain';
+import User, { VerificationStatus } from '../models/User.js';
+import Candidate from '../models/Candidate.js';
+import Election from '../models/Election.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
+import { contract, wallet } from '../config/blockchain.js';
 
 // @desc    Cast a vote
 // @route   POST /api/vote

@@ -4,8 +4,8 @@ import {
     getAllCandidates,
     updateCandidate,
     deleteCandidate
-} from '../controllers/candidateController';
-import { protect, admin } from '../middleware/authMiddleware';
+} from '../controllers/candidateController.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 

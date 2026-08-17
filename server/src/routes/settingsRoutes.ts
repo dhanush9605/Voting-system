@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPublicSettings } from '../controllers/adminController';
+import { getPublicSettings } from '../controllers/adminController.js';
 
 const router = express.Router();
 

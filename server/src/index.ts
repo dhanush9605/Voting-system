@@ -4,15 +4,15 @@ dotenv.config();
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import connectDB from './config/db';
+import connectDB from './config/db.js';
 
-import authRoutes from './routes/authRoutes';
-import uploadRoutes from './routes/uploadRoutes';
-import adminRoutes from './routes/adminRoutes';
-import candidateRoutes from './routes/candidateRoutes';
-import voteRoutes from './routes/voteRoutes';
-import electionRoutes from './routes/electionRoutes';
-import settingsRoutes from './routes/settingsRoutes';
+import authRoutes from './routes/authRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+import candidateRoutes from './routes/candidateRoutes.js';
+import voteRoutes from './routes/voteRoutes.js';
+import electionRoutes from './routes/electionRoutes.js';
+import settingsRoutes from './routes/settingsRoutes.js';
 
 export const app = express();
 const PORT = process.env.PORT || 5000;

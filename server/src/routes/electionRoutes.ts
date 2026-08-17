@@ -1,5 +1,5 @@
 import express from 'express';
-import { getElectionConfig, getPublicElectionResults } from '../controllers/electionController';
+import { getElectionConfig, getPublicElectionResults } from '../controllers/electionController.js';
 
 const router = express.Router();
 

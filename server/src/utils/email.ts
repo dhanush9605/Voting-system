@@ -48,7 +48,7 @@ interface EmailOptions {
     html?: string;
 }
 
-import Settings from '../models/Settings';
+import Settings from '../models/Settings.js';
 
 export const sendEmail = async ({ to, subject, text, html }: EmailOptions) => {
     if (!transporter) {

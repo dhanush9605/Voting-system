@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import Candidate from '../models/Candidate';
-import Election from '../models/Election';
-import { contract } from '../config/blockchain';
+import Candidate from '../models/Candidate.js';
+import Election from '../models/Election.js';
+import { contract } from '../config/blockchain.js';
 
 // @desc    Create a new candidate
 // @route   POST /api/candidates

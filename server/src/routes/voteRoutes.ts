@@ -1,6 +1,6 @@
 import express from 'express';
-import { castVote, verifyVoteTransaction } from '../controllers/voteController';
-import { protect } from '../middleware/authMiddleware';
+import { castVote, verifyVoteTransaction } from '../controllers/voteController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 

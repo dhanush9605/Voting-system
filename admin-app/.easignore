@@ -1,0 +1,8 @@
+# EAS Ignore
+.gradle/
+android/.gradle/
+android/app/build/
+android/.idea/
+android/build/
+node_modules/
+.expo/

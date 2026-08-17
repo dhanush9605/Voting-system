@@ -3,11 +3,11 @@ import { Request, Response } from 'express';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import User, { IUser, UserRole, VerificationStatus } from '../models/User';
-import Notification from '../models/Notification';
-import Election from '../models/Election';
-import { AuthRequest } from '../middleware/authMiddleware';
-import { sendEmail } from '../utils/email';
+import User, { IUser, UserRole, VerificationStatus } from '../models/User.js';
+import Notification from '../models/Notification.js';
+import Election from '../models/Election.js';
+import { AuthRequest } from '../middleware/authMiddleware.js';
+import { sendEmail } from '../utils/email.js';
 import { Expo } from 'expo-server-sdk';
 
 const expo = new Expo();

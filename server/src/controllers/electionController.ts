@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
-import Election from '../models/Election';
-import Candidate from '../models/Candidate';
-import User, { UserRole } from '../models/User';
+import Election from '../models/Election.js';
+import Candidate from '../models/Candidate.js';
+import User, { UserRole } from '../models/User.js';
 import bcrypt from 'bcryptjs';
-import { AuthRequest } from '../middleware/authMiddleware';
-import Notification from '../models/Notification';
-import { sendEmail } from '../utils/email';
-import { contract } from '../config/blockchain';
+import { AuthRequest } from '../middleware/authMiddleware.js';
+import Notification from '../models/Notification.js';
+import { sendEmail } from '../utils/email.js';
+import { contract } from '../config/blockchain.js';
 
 // @desc    Get public election results
 // @route   GET /api/election/results

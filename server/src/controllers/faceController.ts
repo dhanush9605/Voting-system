@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { AuthRequest } from '../middleware/authMiddleware';
+import { AuthRequest } from '../middleware/authMiddleware.js';
 
 // @desc    Compare face image with registered embedding
 // @route   POST /api/face/compare

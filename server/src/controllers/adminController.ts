@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
-import { AuthRequest } from '../middleware/authMiddleware'; // Ensure this is exported
-import User, { VerificationStatus } from '../models/User';
-import Election from '../models/Election';
-import { wallet } from '../config/blockchain';
+import { AuthRequest } from '../middleware/authMiddleware.js'; // Ensure this is exported
+import User, { VerificationStatus } from '../models/User.js';
+import Election from '../models/Election.js';
+import { wallet } from '../config/blockchain.js';
 import { ethers } from 'ethers';
 
-import { UserRole } from '../models/User';
-import Notification from '../models/Notification';
-import Candidate from '../models/Candidate';
-import Settings from '../models/Settings';
-import { sendEmail } from '../utils/email';
+import { UserRole } from '../models/User.js';
+import Notification from '../models/Notification.js';
+import Candidate from '../models/Candidate.js';
+import Settings from '../models/Settings.js';
+import { sendEmail } from '../utils/email.js';
 
 // @desc    Get all voters
 // @route   GET /api/admin/voters

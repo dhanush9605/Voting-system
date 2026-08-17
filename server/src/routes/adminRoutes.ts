@@ -1,6 +1,6 @@
 import express from 'express';
-import { getAllVoters, verifyVoter, deleteVoter, getDashboardStats, getElectionResults, getSettings, updateSettings } from '../controllers/adminController';
-import { protect, admin } from '../middleware/authMiddleware';
+import { getAllVoters, verifyVoter, deleteVoter, getDashboardStats, getElectionResults, getSettings, updateSettings } from '../controllers/adminController.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ import {
   startNewElection,
   getElectionHistory,
   deleteElection
-} from '../controllers/electionController';
+} from '../controllers/electionController.js';
 
 router.get('/election', protect, admin, getElectionConfig);
 router.put('/election', protect, admin, updateElectionConfig);
