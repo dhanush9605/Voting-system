@@ -1,0 +1,5 @@
+# Prevent Vercel from auto-compiling api/index.ts as ESM.
+# We commit a pre-built api/index.js (CJS via esbuild) instead.
+# If Vercel sees api/index.ts it will overwrite our build with ESM output,
+# breaking dotenv and other packages that use require() internally.
+api/index.ts
