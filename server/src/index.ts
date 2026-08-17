@@ -87,7 +87,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     }
 });
 
-if (require.main === module && process.env.NODE_ENV !== 'production') {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
     // Connect DB first, then start accepting requests
     connectDB().then(() => {
         app.listen(PORT, () => {
