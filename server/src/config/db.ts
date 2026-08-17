@@ -20,8 +20,8 @@ const connectDB = async () => {
         const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/voting-system';
         
         // Basic check for placeholder strings
-        if (mongoURI.includes('<username>') || mongoURI.includes('cluster.mongodb.net')) {
-             console.warn('⚠️ MONGO_URI contains placeholders or likely invalid Atlas URI.');
+        if (mongoURI.includes('<username>') || mongoURI.includes('<password>')) {
+             console.warn('⚠️ MONGO_URI contains placeholders. Please update your .env file.');
         }
 
         console.log('📡 Connecting to MongoDB...');

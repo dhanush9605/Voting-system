@@ -77,7 +77,7 @@ export function AppSidebar() {
 
       {/* Logo */}
         <div className="relative z-10 flex items-center gap-3 px-4 py-6 border-b border-border/40 min-h-[85px]">
-          <img src="/logo.png" alt={SITE_NAME} className="w-10 h-10 object-contain" />
+          <img src="/logo1.png" alt={SITE_NAME} className="w-10 h-10 object-contain" style={{ mixBlendMode: 'screen' }} />
           {!isCollapsed && (
           <div className="flex flex-col overflow-hidden animate-in fade-in slide-in-from-left-2">
             <span className="font-bold text-lg text-foreground truncate">{SITE_NAME}</span>

@@ -57,7 +57,7 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
                 initial={{ top: "-10%", opacity: 0 }}
                 animate={{ top: "110%", opacity: [0, 1, 0] }}
                 transition={{ duration: 2, ease: "linear", repeat: 0 }}
-                className="absolute w-full h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_20px_2px_rgba(59,130,246,0.5)] z-20"
+                className="absolute w-full h-[2px] bg-gradient-to-r from-transparent via-teal-500 to-transparent shadow-[0_0_20px_2px_rgba(20,184,166,0.5)] z-20"
             />
 
             {/* Shockwave Exit Effect */}
@@ -67,7 +67,7 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 4, opacity: [0, 0.5, 0] }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
-                        className="absolute w-[50vw] h-[50vw] rounded-full border-[20px] border-blue-500/30 blur-xl z-0"
+                        className="absolute w-[50vw] h-[50vw] rounded-full border-[20px] border-teal-500/30 blur-xl z-0"
                     />
                 )}
             </AnimatePresence>
@@ -77,9 +77,9 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
                     initial={{ scale: 0, rotate: -180, opacity: 0 }}
                     animate={{ scale: 1, rotate: 0, opacity: 1 }}
                     transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
-                    className="w-28 h-28 mb-8 rounded-3xl bg-white/10 flex items-center justify-center shadow-[0_0_50px_rgba(79,70,229,0.5)] border border-white/20 overflow-hidden px-4"
+                    className="w-52 h-52 mb-8 flex items-center justify-center"
                 >
-                    <img src="/logo.png" alt="Logo" className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                    <img src="/logo1.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(13,148,136,0.8)]" style={{ mixBlendMode: 'screen' }} />
                 </motion.div>
 
                 {/* Decoding Text */}
@@ -89,7 +89,7 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
                     transition={{ duration: 0.5 }}
                     className="relative"
                 >
-                    <h1 className="text-7xl md:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-violet-400 to-purple-400 font-space select-none">
+                    <h1 className="text-7xl md:text-9xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-teal-400 via-emerald-400 to-green-500 font-space select-none">
                         {decodedText}
                     </h1>
 
@@ -102,14 +102,14 @@ const IntroAnimation = ({ onComplete }: IntroAnimationProps) => {
                     initial={{ width: 0, opacity: 0 }}
                     animate={{ width: "200px", opacity: 1 }}
                     transition={{ delay: 1, duration: 1.5, ease: "circOut" }}
-                    className="mt-6 h-1 rounded-full bg-gradient-to-r from-transparent via-blue-500 to-transparent"
+                    className="mt-6 h-1 rounded-full bg-gradient-to-r from-transparent via-teal-500 to-transparent"
                 />
 
                 <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: [0, 1, 0.5, 1] }}
                     transition={{ delay: 1.2, duration: 1 }}
-                    className="mt-2 text-blue-400/60 text-xs tracking-[0.3em] font-mono uppercase"
+                    className="mt-2 text-teal-400/60 text-xs tracking-[0.3em] font-mono uppercase"
                 >
                     System Initialized
                 </motion.p>

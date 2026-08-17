@@ -110,7 +110,7 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
         return challenges[Math.floor(Math.random() * challenges.length)];
     }, []);
 
-    const checkChallenge = (type: ChallengeType, landmarks: faceapi.FaceLandmarks68): boolean => {
+    const checkChallenge = useCallback((type: ChallengeType, landmarks: faceapi.FaceLandmarks68): boolean => {
         const yaw = getFaceYaw(landmarks);
 
         // Debug
@@ -131,7 +131,7 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
         }
 
         return false;
-    };
+    }, []);
 
 
     const startDetection = useCallback(() => {
@@ -245,7 +245,17 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
             isCancelled = true;
             if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [detectionState, currentChallenge, generateChallenge]);
+    }, [detectionState, currentChallenge, generateChallenge, checkChallenge, onCapture]);
+
+    const handleCapture = useCallback((descriptor: Float32Array) => {
+        if (!webcamRef.current) return;
+        processingRef.current = true;
+        const imageSrc = webcamRef.current.getScreenshot();
+        if (imageSrc) {
+            setDetectionState('success');
+            setTimeout(() => onCapture(imageSrc, descriptor), 1500);
+        }
+    }, [onCapture]);
 
     // Attach listener
     useEffect(() => {
@@ -254,16 +264,6 @@ export const FaceCapture: React.FC<FaceCaptureProps> = ({ onCapture }) => {
             return cleanup;
         }
     }, [modelLoaded, cameraReady, startDetection]);
-
-    const handleCapture = (descriptor: Float32Array) => {
-        if (!webcamRef.current) return;
-        processingRef.current = true;
-        const imageSrc = webcamRef.current.getScreenshot();
-        if (imageSrc) {
-            setDetectionState('success');
-            setTimeout(() => onCapture(imageSrc, descriptor), 1500);
-        }
-    };
 
     const retry = () => {
         setDetectionState('position');

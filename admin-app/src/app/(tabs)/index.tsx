@@ -106,21 +106,24 @@ export default function DashboardScreen() {
 
         {/* Active Election Banner - Vibrant Gradient */}
         {electionTitle ? (
-          <LinearGradient
-            colors={['#0f766e', '#064e3b']} // teal-700 to emerald-900
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="rounded-3xl p-5 mb-8 shadow-lg shadow-teal-900/50"
-          >
-            <View className="flex-row items-center justify-between mb-4">
-              <View className="bg-black/20 px-3 py-1 rounded-full">
-                <Text className="text-teal-100 text-xs font-bold uppercase tracking-wider">{electionStatus} Election</Text>
+          <View className="mb-8 overflow-hidden shadow-lg shadow-teal-900/50 relative" style={{ borderRadius: 24 }}>
+            <LinearGradient
+              colors={['#0f766e', '#064e3b']} // teal-700 to emerald-900
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ position: 'absolute', width: '100%', height: '100%' }}
+            />
+            <View className="p-6">
+              <View className="flex-row items-center justify-between mb-4">
+                <View className="bg-black/20 px-3 py-1 rounded-full self-start">
+                  <Text className="text-teal-100 text-xs font-bold uppercase tracking-wider">{electionStatus} Election</Text>
+                </View>
+                <MaterialIcons name="how-to-vote" size={24} color="rgba(255,255,255,0.7)" />
               </View>
-              <MaterialIcons name="how-to-vote" size={24} color="rgba(255,255,255,0.7)" />
+              <Text className="text-white font-black text-2xl mb-1" numberOfLines={2}>{electionTitle}</Text>
+              <Text className="text-teal-100/70 text-sm">Decentralized control center active.</Text>
             </View>
-            <Text className="text-white font-black text-2xl mb-1" numberOfLines={2}>{electionTitle}</Text>
-            <Text className="text-teal-100/70 text-sm">Decentralized control center active.</Text>
-          </LinearGradient>
+          </View>
         ) : null}
 
         <View className="mb-8">

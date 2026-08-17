@@ -1,10 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 
 
 export interface AuthRequest extends Request {
-    user?: any;
+    user?: IUser | null;
 }
 
 const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -20,7 +20,7 @@ const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
             // console.log('Decoded Token:', decoded);
-            req.user = await User.findById((decoded as any).id).select('-password');
+            req.user = await User.findById((decoded as jwt.JwtPayload).id).select('-password');
             // console.log('User found:', req.user?._id);
             next();
         } catch (error) {

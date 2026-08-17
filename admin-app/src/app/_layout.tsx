@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, ActivityIndicator } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import api from '../api/api';
+import { registerForPushNotificationsAsync } from '../utils/notifications';
 
 import '../global.css';
 
@@ -66,6 +67,17 @@ export default function RootLayout() {
             }
           }
           setIsAuthenticated(true);
+
+          // Register Push Token
+          try {
+            const pushToken = await registerForPushNotificationsAsync();
+            if (pushToken) {
+              await api.put('/auth/push-token', { expoPushToken: pushToken });
+            }
+          } catch (e) {
+            console.log('Failed to register push token on load', e);
+          }
+
         } else {
           await AsyncStorage.removeItem('admin_token');
           setIsAuthenticated(false);
@@ -95,6 +107,18 @@ export default function RootLayout() {
 
   const signIn = useCallback((token: string) => {
     setIsAuthenticated(true);
+
+    // Register Push Token
+    (async () => {
+      try {
+        const pushToken = await registerForPushNotificationsAsync();
+        if (pushToken) {
+          await api.put('/auth/push-token', { expoPushToken: pushToken });
+        }
+      } catch (e) {
+        console.log('Failed to register push token on sign in', e);
+      }
+    })();
   }, []);
 
   const signOut = useCallback(async () => {

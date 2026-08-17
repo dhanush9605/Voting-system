@@ -77,9 +77,10 @@ export default function VotersScreen() {
         onPress: async () => {
           setActionLoading(id);
           try {
-            await api.put(`/admin/voters/${id}/verify`, { action });
+            const status = action === 'approve' ? 'verified' : 'rejected';
+            await api.put(`/admin/verify-voter/${id}`, { status });
             setAllVoters(prev => prev.map(v =>
-              v._id === id ? { ...v, verificationStatus: action === 'approve' ? 'verified' : 'rejected' } : v
+              v._id === id ? { ...v, verificationStatus: status } : v
             ));
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           } catch (err: any) {
@@ -137,14 +138,16 @@ export default function VotersScreen() {
           }}
           className="mr-3 shadow-lg shadow-teal-900/50"
         >
-          <LinearGradient
-            colors={['#0f766e', '#115e59']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="px-4 py-2 rounded-full border border-teal-600"
-          >
-            <Text className="text-white font-bold">{label}</Text>
-          </LinearGradient>
+          <View className="rounded-full overflow-hidden border border-teal-600">
+            <LinearGradient
+              colors={['#0f766e', '#115e59']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="px-4 py-2"
+            >
+              <Text className="text-white font-bold">{label}</Text>
+            </LinearGradient>
+          </View>
         </TouchableOpacity>
       );
     }
@@ -256,19 +259,20 @@ export default function VotersScreen() {
               <View className="flex-row space-x-3 mt-2 border-t border-zinc-800 pt-4">
                 {voter.verificationStatus === 'pending' && (
                   <>
-                    <TouchableOpacity
-                      onPress={() => handleVerify(voter._id, 'approve')}
-                      disabled={actionLoading === voter._id}
-                      className="flex-1 mr-2"
-                    >
-                      <LinearGradient
-                        colors={['#059669', '#047857']}
-                        className="py-3 rounded-xl items-center flex-row justify-center"
-                      >
-                        <Feather name="check-circle" size={16} color="white" />
-                        <Text className="text-white font-bold ml-2">Approve</Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
+                      <View className="rounded-xl overflow-hidden flex-1 mr-2">
+                        <TouchableOpacity
+                          onPress={() => handleVerify(voter._id, 'approve')}
+                          disabled={actionLoading === voter._id}
+                        >
+                          <LinearGradient
+                            colors={['#059669', '#047857']}
+                            className="py-3 items-center flex-row justify-center"
+                          >
+                            <Feather name="check-circle" size={16} color="white" />
+                            <Text className="text-white font-bold ml-2">Approve</Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
                     
                     <TouchableOpacity
                       onPress={() => handleVerify(voter._id, 'reject')}

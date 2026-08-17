@@ -92,7 +92,7 @@ const Landing = () => {
           >
             <div className="container mx-auto px-6 h-20 flex items-center justify-between">
               <Link to="/" className="flex items-center gap-2 group">
-                <img src="/logo.png" alt={SITE_NAME} className="w-10 h-10 object-contain" />
+                <img src="/logo1.png" alt={SITE_NAME} className="w-16 h-16 object-contain" style={{ mixBlendMode: 'screen' }} />
                 <span className="font-bold text-lg tracking-tight text-foreground group-hover:opacity-80 transition-opacity">{SITE_NAME}</span>
               </Link>
 
@@ -664,7 +664,7 @@ const Landing = () => {
             <div className="container mx-auto px-6">
               <div className="flex flex-col md:flex-row justify-between items-center gap-10">
                 <div className="flex items-center gap-3">
-                  <img src="/logo.png" alt={SITE_NAME} className="w-10 h-10 object-contain" />
+                  <img src="/logo1.png" alt={SITE_NAME} className="w-16 h-16 object-contain" style={{ mixBlendMode: 'screen' }} />
                   <span className="font-bold text-xl tracking-tight">{SITE_NAME}</span>
                 </div>
 

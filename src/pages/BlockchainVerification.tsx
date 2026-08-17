@@ -51,7 +51,7 @@ const BlockchainVerification = () => {
         "Validating Block Integrity..."
     ];
 
-    const verifyTransaction = async (hash: string) => {
+    const verifyTransaction = useCallback(async (hash: string) => {
         if (!hash) return;
 
         setLoading(true);
@@ -74,14 +74,14 @@ const BlockchainVerification = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [loadingSteps]);
 
     useEffect(() => {
         if (initialHash) {
             setQuery(initialHash);
             verifyTransaction(initialHash);
         }
-    }, [initialHash]);
+    }, [initialHash, verifyTransaction]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();

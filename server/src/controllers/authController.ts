@@ -8,6 +8,9 @@ import Notification from '../models/Notification';
 import Election from '../models/Election';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { sendEmail } from '../utils/email';
+import { Expo } from 'expo-server-sdk';
+
+const expo = new Expo();
 
 
 
@@ -172,6 +175,33 @@ export const registerUser = async (req: Request, res: Response) => {
 
             if (notifications.length > 0) {
                 await Notification.insertMany(notifications);
+            }
+
+            // Send Push Notifications to Admins
+            const messages: any[] = [];
+            for (let admin of admins) {
+                if (admin.expoPushToken && Expo.isExpoPushToken(admin.expoPushToken)) {
+                    messages.push({
+                        to: admin.expoPushToken,
+                        sound: 'default',
+                        title: 'New Voter Registration 🚨',
+                        body: `${user.name} (${user.studentId}) is pending verification.`,
+                        data: { type: 'registration', userId: user._id },
+                    });
+                }
+            }
+
+            if (messages.length > 0) {
+                const chunks = expo.chunkPushNotifications(messages);
+                (async () => {
+                    for (let chunk of chunks) {
+                        try {
+                            await expo.sendPushNotificationsAsync(chunk);
+                        } catch (error) {
+                            console.error('Error sending push notification chunk:', error);
+                        }
+                    }
+                })();
             }
 
             // Send Welcome Email (Fire & Forget)
@@ -558,6 +588,26 @@ export const verifyFace = async (req: AuthRequest, res: Response) => {
             });
         }
 
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Save Expo Push Token
+// @route   PUT /api/auth/push-token
+// @access  Private
+export const savePushToken = async (req: AuthRequest, res: Response) => {
+    try {
+        const { expoPushToken } = req.body;
+        const user = await User.findById(req.user?._id);
+
+        if (user) {
+            user.expoPushToken = expoPushToken;
+            await user.save();
+            res.json({ message: 'Push token saved successfully' });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

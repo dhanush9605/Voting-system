@@ -192,14 +192,15 @@ export function RegisterForm() {
                 title: "Registration submitted!",
                 description: "Your registration is pending verification.",
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             let msg = "Something went wrong. Please try again.";
+            const err = error as { code?: string, response?: { data?: { message?: string } } };
 
-            if (error.code === 'ERR_NETWORK' || !error.response) {
+            if (err.code === 'ERR_NETWORK' || !err.response) {
                 msg = "Unable to connect to the server. Please check if the backend is running.";
-            } else if (error.response?.data?.message) {
-                msg = error.response.data.message;
+            } else if (err.response?.data?.message) {
+                msg = err.response.data.message;
             }
 
             toast({

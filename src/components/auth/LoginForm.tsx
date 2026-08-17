@@ -60,8 +60,9 @@ export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: 
                 default:
                     navigate('/voter/dashboard');
             }
-        } catch (error: any) {
-            if (error.response?.status === 428) {
+        } catch (error: unknown) {
+            const err = error as { response?: { status?: number, data?: { message?: string } }, message?: string };
+            if (err.response?.status === 428) {
                 setIsFaceVerificationStep(true);
                 toast({
                     title: "Face Verification Required",
@@ -72,7 +73,7 @@ export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: 
 
             toast({
                 title: "Login failed",
-                description: error.response?.data?.message || error.message || "Invalid credentials",
+                description: err.response?.data?.message || err.message || "Invalid credentials",
                 variant: "destructive",
             });
         } finally {
@@ -108,10 +109,11 @@ export function LoginForm({ defaultRole = 'voter', allowRoleSelection = true }: 
                 default:
                     navigate('/voter/dashboard');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const err = error as { response?: { data?: { message?: string } } };
             toast({
                 title: "Verification Failed",
-                description: error.response?.data?.message || "Face not recognized. Please try again.",
+                description: err.response?.data?.message || "Face not recognized. Please try again.",
                 variant: "destructive"
             });
         } finally {

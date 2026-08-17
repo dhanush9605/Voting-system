@@ -36,6 +36,7 @@ export interface IUser extends Document {
         votedAt: Date;
     }>;
     refreshToken?: string;
+    expoPushToken?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -71,7 +72,8 @@ const UserSchema: Schema = new Schema({
     rejectionReason: { type: String },
     voteTransactionHash: { type: String },
     votedAt: { type: Date },
-    refreshToken: { type: String }
+    refreshToken: { type: String },
+    expoPushToken: { type: String }
 }, {
     timestamps: true
 });

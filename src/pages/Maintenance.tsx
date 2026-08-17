@@ -118,7 +118,7 @@ export default function Maintenance({
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [estimatedEndTime, hasEstimatedEndTime]);
+  }, [parsedTargetDate, onRefresh]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

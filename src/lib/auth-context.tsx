@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     } catch (error) {
       // Don't auto-logout if it's just a network error or maintenance
-      const isNetworkError = !(error as any).response;
+      const isNetworkError = !(error as { response?: unknown }).response;
 
       setState(prev => ({
         ...prev,
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Pass the full error object so components can check for status codes (e.g. 428)
       throw error;
     }
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: true,
         isLoading: false,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       throw error;
     }
   }, []);

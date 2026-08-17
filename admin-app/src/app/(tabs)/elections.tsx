@@ -478,7 +478,7 @@ function ResultsSection() {
         </View>
       ) : sorted.map((r, i) => {
         const pct   = totalVotes > 0 ? Math.round(((r.votes || 0) / totalVotes) * 100) : 0;
-        const c     = r.candidate || ({} as Candidate);
+        const c     = r;
         const color = colors[i % colors.length];
         return (
           <Animated.View entering={FadeInDown.delay(300 + (i * 100)).duration(400).springify()} key={c._id || i} className="bg-white/5 rounded-3xl p-5 mb-4 border border-white/10 shadow-sm relative overflow-hidden">
