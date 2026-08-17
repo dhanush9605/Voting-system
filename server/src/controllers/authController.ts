@@ -8,9 +8,7 @@ import Notification from '../models/Notification.js';
 import Election from '../models/Election.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
 import { sendEmail } from '../utils/email.js';
-import { Expo } from 'expo-server-sdk';
-
-const expo = new Expo();
+// expo-server-sdk is ESM-only — loaded dynamically to avoid CommonJS/ESM conflict on Vercel
 
 
 
@@ -178,31 +176,36 @@ export const registerUser = async (req: Request, res: Response) => {
             }
 
             // Send Push Notifications to Admins
-            const messages: any[] = [];
-            for (let admin of admins) {
-                if (admin.expoPushToken && Expo.isExpoPushToken(admin.expoPushToken)) {
-                    messages.push({
-                        to: admin.expoPushToken,
-                        sound: 'default',
-                        title: 'New Voter Registration 🚨',
-                        body: `${user.name} (${user.studentId}) is pending verification.`,
-                        data: { type: 'registration', userId: user._id },
-                    });
-                }
-            }
-
-            if (messages.length > 0) {
-                const chunks = expo.chunkPushNotifications(messages);
-                (async () => {
-                    for (let chunk of chunks) {
-                        try {
-                            await expo.sendPushNotificationsAsync(chunk);
-                        } catch (error) {
-                            console.error('Error sending push notification chunk:', error);
+            (async () => {
+                try {
+                    const { Expo } = await import('expo-server-sdk');
+                    const expo = new Expo();
+                    const messages: any[] = [];
+                    for (let admin of admins) {
+                        if (admin.expoPushToken && Expo.isExpoPushToken(admin.expoPushToken)) {
+                            messages.push({
+                                to: admin.expoPushToken,
+                                sound: 'default',
+                                title: 'New Voter Registration 🚨',
+                                body: `${user.name} (${user.studentId}) is pending verification.`,
+                                data: { type: 'registration', userId: user._id },
+                            });
                         }
                     }
-                })();
-            }
+                    if (messages.length > 0) {
+                        const chunks = expo.chunkPushNotifications(messages);
+                        for (let chunk of chunks) {
+                            try {
+                                await expo.sendPushNotificationsAsync(chunk);
+                            } catch (error) {
+                                console.error('Error sending push notification chunk:', error);
+                            }
+                        }
+                    }
+                } catch (expoErr) {
+                    console.error('Failed to send Expo push notifications:', expoErr);
+                }
+            })();
 
             // Send Welcome Email (Fire & Forget)
             sendEmail({
