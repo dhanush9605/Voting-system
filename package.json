@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "npx esbuild api/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=api/index.js --external:bcrypt && vite build",
+    "build": "npx esbuild api/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=api/index.cjs --external:bcrypt && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
